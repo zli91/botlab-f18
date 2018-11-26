@@ -67,11 +67,11 @@ public:
     {
         //////////// TODO: Implement your feedback controller here. //////////////////////
         
-        const float kPGain = 1.2f;
-        const float kDGain = 0.9f;//1.0f;
+        const float kPGain = 0.5f;//1.2f
+        const float kDGain = 1.2f;//1.0f;
         const float kIGain = 0.0f;//0.0001f;
 
-        const float kSlowdownDist = 0.2f;//0.26f;
+        const float kSlowdownDist = 0.3f;//0.26f;
         const float kDesiredSpeed = 0.5f;//0.55f;
         const float kMinSpeed = 0.02f;//0.4f;
         const float kTurnSpeed = 1.0f;//0.3f;
@@ -122,7 +122,8 @@ public:
                     float turnspeed = kTurnSpeed;
 		    
 		    //if the error is small, vary the turnspeed linearly with the error
-                    if(std::abs(error) < 0.7) turnspeed = -0.35 + 4 * std::abs(error);
+                    //if(std::abs(error) < 0.7) turnspeed = -0.35 + 4 * std::abs(error);
+                    if(std::abs(error) < 0.7) turnspeed = -0.3 + 2 * std::abs(error);
                     turnspeed = std::min(turnspeed, kTurnSpeed);//don't turn faster than the desired turnspeed
 
                     // Turn left if the target is to the left
@@ -169,14 +170,14 @@ public:
                 //go slower if the angle error is greater
 		        speed *= std::cos(error);
                 //don't go backwards
-                speed = std::max(0.0f, float(speed));
+                speed = std::max(0.0f, 0.5f*float(speed));
 
                 cmd.trans_v = speed;
 
                 //pid control the angular v based on angle error
                 cmd.angular_v = (error * kPGain) + (deltaError * kDGain) + (totalError_ * kIGain);
                 //angular velocity must not exceed 1.5 the desired turnspeed
-                cmd.angular_v = std::min(cmd.angular_v, kTurnSpeed * 1.5f);
+                cmd.angular_v = std::min(cmd.angular_v, kTurnSpeed * 1.2f);
 		}
             else
             {
@@ -350,10 +351,10 @@ int main(int argc, char** argv)
     while(true)
     {
         lcmInstance.handleTimeout(50);  // update at 20Hz minimum
-
+        std::cout << "i got here";
     	if(controller.timesync_initialized()){
             	mbot_motor_command_t cmd = controller.updateCommand();
-
+                //std::cout << "i got here" << cmd.trans_v;
             	lcmInstance.publish(MBOT_MOTOR_COMMAND_CHANNEL, &cmd);
     	}
     }
