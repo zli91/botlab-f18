@@ -39,6 +39,9 @@ public:
     Point<int> xy2Cell(const float x, const float y, OccupancyGrid& map);
     void bresenhamLineUpdate(Point<int> firstCell, Point<int> secondCell, OccupancyGrid& map);
     int clampCellLogOdds(int logOdd);
+    // void setLastPose(const float & poseX, const float & poseY, const float & poseT);
+
+
 private:
 
     const float  kMaxLaserDistance_;
@@ -46,6 +49,10 @@ private:
     const int8_t kMissOdds_;
 
     //////////////////// TODO: Add any private members needed for your occupancy grid mapping algorithm ///////////////
+
+    bool firstUpdate_;
+    pose_xyt_t lastPose;
+    pose_xyt_t currentPose;
 
 };
 
