@@ -32,9 +32,15 @@ bool ActionModel::updateAction(const pose_xyt_t& odometry)
 
     currentOdometry = odometry;
 
+
     float dRot1 = atan2(currentOdometry.x - previousOdometry.x, currentOdometry.y - previousOdometry.y) - previousOdometry.theta;
     float dTrans = sqrt((currentOdometry.x - previousOdometry.x)*(currentOdometry.x - previousOdometry.x) + (currentOdometry.y - previousOdometry.y)*(currentOdometry.y - previousOdometry.y));
     float dRot2 = currentOdometry.theta - previousOdometry.theta - dRot1;
+
+    if(dRot1*dRot1 + dTrans*dTrans + dRot2*dRot2 < 0.0003){
+      return false;
+    }
+
 
     std::default_random_engine generator;
 
