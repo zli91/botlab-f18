@@ -30,16 +30,18 @@ double SensorModel::likelihood(const particle_t& sample, const lidar_t& scan, co
     ///////////// TODO: Implement your sensor model for calculating the likelihood of a particle given a laser scan //////////
     float q = 1.0f;
 
-    MovingLaserScan movingScan(scan, sample.parent_pose, sample.pose, 1);
+    MovingLaserScan movingScan(scan, sample.parent_pose, sample.pose, 10);//1);
 
     int N = movingScan.size();
     float zStar;
+
     for(int i = 0; i < N ; i++){
 
         zStar = rayCasting(movingScan.at(i).origin.x, movingScan.at(i).origin.y, movingScan.at(i).theta, map);
         q *= z_hit * pHit(movingScan.at(i).range, zStar) + z_short * pShort(movingScan.at(i).range, zStar) + z_max * pMax(movingScan.at(i).range) + z_rand * pRand(movingScan.at(i).range);
     }
     q += 0.000000000001f;
+
     return q;
 }
 

@@ -32,7 +32,6 @@ bool ActionModel::updateAction(const pose_xyt_t& odometry)
 
     currentOdometry = odometry;
 
-
     float dRot1 = atan2(currentOdometry.x - previousOdometry.x, currentOdometry.y - previousOdometry.y) - previousOdometry.theta;
     float dTrans = sqrt((currentOdometry.x - previousOdometry.x)*(currentOdometry.x - previousOdometry.x) + (currentOdometry.y - previousOdometry.y)*(currentOdometry.y - previousOdometry.y));
     float dRot2 = currentOdometry.theta - previousOdometry.theta - dRot1;
@@ -41,8 +40,8 @@ bool ActionModel::updateAction(const pose_xyt_t& odometry)
       return false;
     }
 
-
-    std::default_random_engine generator;
+    std::random_device mch;
+    std::default_random_engine generator(mch());
 
     std::normal_distribution<double> distributionRot1(0.0, alpha[0]*dRot1*dRot1 + alpha[1]*dTrans*dTrans);
     std::normal_distribution<double> distributionTrans(0.0, alpha[2]*dTrans*dTrans + alpha[3]*dRot1*dRot1 + alpha[3]*dRot2*dRot2);
@@ -60,6 +59,7 @@ particle_t ActionModel::applyAction(const particle_t& sample)
 {
     ////////////// TODO: Implement your code for sampling new poses from the distribution computed in updateAction //////////////////////
     // Make sure you create a new valid particle_t. Don't forget to set the new time and new parent_pose.
+
     particle_t newSample;
 
     newSample.parent_pose = sample.pose;
@@ -73,4 +73,5 @@ particle_t ActionModel::applyAction(const particle_t& sample)
     newSample.pose.theta = sample.pose.theta + delta_theta;
 
     return newSample;
+
 }

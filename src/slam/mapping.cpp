@@ -39,10 +39,10 @@ void Mapping::updateMap(const lidar_t& scan, const pose_xyt_t& pose, OccupancyGr
 
   int N = movingScan.size();
 
+
   for(int i = 0; i < N ; i++){
     double botX = movingScan.at(i).origin.x;
     double botY = movingScan.at(i).origin.y;
-
     Point<int> botCellXY = global_position_to_grid_cell({botX, botY}, map);
 
     if (movingScan.at(i).range < kMaxLaserDistance_){
@@ -59,10 +59,6 @@ void Mapping::updateMap(const lidar_t& scan, const pose_xyt_t& pose, OccupancyGr
       std::cout << "Map updated!" << '\n';
   }
 
-  if(!firstUpdate_){
-    lastPose = pose;
-
-  }
 
   return;
 }

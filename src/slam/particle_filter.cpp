@@ -7,6 +7,7 @@
 using namespace std;
 
 
+
 ParticleFilter::ParticleFilter(int numParticles)
 : kNumParticles_ (numParticles)
 {
@@ -19,7 +20,8 @@ void ParticleFilter::initializeFilterAtPose(const pose_xyt_t& pose)
 {
     ///////////// TODO: Implement your method for initializing the particles in the particle filter /////////////////
 
-    std::default_random_engine generator;
+    std::random_device mch;
+    std::default_random_engine generator(mch());
 
     std::normal_distribution<double> distributionX(0.0, 0.5);
     std::normal_distribution<double> distributionY(0.0, 0.5);
@@ -27,9 +29,16 @@ void ParticleFilter::initializeFilterAtPose(const pose_xyt_t& pose)
 
     for(int i = 0; i < kNumParticles_; i++){
         posterior_.at(i).pose = pose;
-        posterior_.at(i).parent_pose = pose;
+
+        posterior_.at(i).pose.x += distributionX(generator);
+        posterior_.at(i).pose.y += distributionY(generator);
+        posterior_.at(i).pose.theta += distributionT(generator);
+
+        posterior_.at(i).parent_pose = posterior_.at(i).pose;
         posterior_.at(i).weight = 1;
     }
+
+    return;
 }
 
 
@@ -76,33 +85,36 @@ std::vector<particle_t> ParticleFilter::resamplePosteriorDistribution(void)
 
     std::vector<particle_t> prior;
 
-    prior = posterior_;
+    prior.resize(posterior_.size());
 
     double M = double(prior.size());
     double maxR = 1.0 / M;
 
-    double weightSum = 0;
+    double weightSum = 0.0;
 
     for(int i = 0; i < int(prior.size()); i++){
-        weightSum += prior.at(i).weight;
+        weightSum += posterior_.at(i).weight;
     }
 
-    std::default_random_engine generator;
+    std::random_device mch;
+    std::default_random_engine generator(mch());
     std::uniform_real_distribution<double> distribution(0.0,maxR);
 
     double U = distribution(generator) * weightSum;
-    double c = prior.at(0).weight;
+    double c = posterior_.at(0).weight;
+
 
     int i = 0;
 
     for(int m = 0; m < int(prior.size()); m++){
-        if (m > 1){ U += ((m - 1) * maxR) * weightSum; }
+        if (m >= 1){ U += (maxR) * weightSum; }
 
         while (U > c){
           i += 1;
-          c += prior.at(i).weight;
+          c += posterior_.at(i).weight;
         }
-        prior.at(m) = prior.at(i);
+        prior.at(m) = posterior_.at(i);
+
     }
 
     return prior;
