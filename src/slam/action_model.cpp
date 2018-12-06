@@ -13,8 +13,8 @@ ActionModel::ActionModel(void)
 : firstCall_(true)
 {
     //////////////// TODO: Handle any initialization for your ActionModel /////////////////////////
-    alpha[0] = alpha[1] = 0.1;
-    alpha[2] = alpha[3] = 0.01;
+    alpha[0] = alpha[1] = 0.0f;
+    alpha[2] = alpha[3] = 0.0f;
 }
 
 
@@ -28,17 +28,40 @@ bool ActionModel::updateAction(const pose_xyt_t& odometry)
       return false;
     }
 
+    if (fabs(odometry.x - currentOdometry.x) < 0.002f)
+    {
+      return false;
+    }
+
     previousOdometry = currentOdometry;
 
     currentOdometry = odometry;
 
-    float dRot1 = atan2(currentOdometry.x - previousOdometry.x, currentOdometry.y - previousOdometry.y) - previousOdometry.theta;
+    float dRot1 = atan2(currentOdometry.y - previousOdometry.y, currentOdometry.x - previousOdometry.x) - previousOdometry.theta;
     float dTrans = sqrt((currentOdometry.x - previousOdometry.x)*(currentOdometry.x - previousOdometry.x) + (currentOdometry.y - previousOdometry.y)*(currentOdometry.y - previousOdometry.y));
     float dRot2 = currentOdometry.theta - previousOdometry.theta - dRot1;
 
-    if(dRot1*dRot1 + dTrans*dTrans + dRot2*dRot2 < 0.0003){
-      return false;
+    float ang_thresh = 0.25;
+
+    if(dRot1 >= ang_thresh){
+      dRot1 -= 2 * 3.1415926;
     }
+
+    if(dRot2 >= ang_thresh){
+      dRot2 -= 2 * 3.1415926;
+    }
+
+    if(dRot1 < -ang_thresh){
+      dRot1 += 2 * 3.1415926;
+    }
+
+    if(dRot2 < -ang_thresh){
+      dRot2 += 2 * 3.1415926;
+    }
+
+
+
+
 
     std::random_device mch;
     std::default_random_engine generator(mch());
@@ -71,6 +94,8 @@ particle_t ActionModel::applyAction(const particle_t& sample)
     newSample.pose.x = sample.pose.x + delta_x;
     newSample.pose.y = sample.pose.y + delta_y;
     newSample.pose.theta = sample.pose.theta + delta_theta;
+
+
 
     return newSample;
 

@@ -1,6 +1,9 @@
 #include <slam/particle_filter.hpp>
 #include <slam/occupancy_grid.hpp>
 #include <lcmtypes/pose_xyt_t.hpp>
+#include <lcmtypes/lidar_t.hpp>
+#include <lcmtypes/particle_t.hpp>
+
 #include <cassert>
 #include <random>
 
@@ -23,10 +26,9 @@ void ParticleFilter::initializeFilterAtPose(const pose_xyt_t& pose)
     std::random_device mch;
     std::default_random_engine generator(mch());
 
-    std::normal_distribution<double> distributionX(0.0, 0.5);
-    std::normal_distribution<double> distributionY(0.0, 0.5);
+    std::normal_distribution<double> distributionX(0.0, 0.25);//0.0
+    std::normal_distribution<double> distributionY(0.0, 0.25);//0.0
     std::normal_distribution<double> distributionT(0.0, 3.1415926/10.0);
-
     for(int i = 0; i < kNumParticles_; i++){
         posterior_.at(i).pose = pose;
 
@@ -35,9 +37,8 @@ void ParticleFilter::initializeFilterAtPose(const pose_xyt_t& pose)
         posterior_.at(i).pose.theta += distributionT(generator);
 
         posterior_.at(i).parent_pose = posterior_.at(i).pose;
-        posterior_.at(i).weight = 1;
+        posterior_.at(i).weight = 1.0f / kNumParticles_;
     }
-
     return;
 }
 
@@ -56,6 +57,7 @@ pose_xyt_t ParticleFilter::updateFilter(const pose_xyt_t&      odometry,
         auto proposal = computeProposalDistribution(prior);
         posterior_ = computeNormalizedPosterior(proposal, laser, map);
         posteriorPose_ = estimatePosteriorPose(posterior_);
+        printf("pose:x, y, theta: %f, %f, %f\n", posteriorPose_.x, posteriorPose_.y, posteriorPose_.theta);
     }
 
     posteriorPose_.utime = odometry.utime;
@@ -90,31 +92,24 @@ std::vector<particle_t> ParticleFilter::resamplePosteriorDistribution(void)
     double M = double(prior.size());
     double maxR = 1.0 / M;
 
-    double weightSum = 0.0;
-
-    for(int i = 0; i < int(prior.size()); i++){
-        weightSum += posterior_.at(i).weight;
-    }
-
     std::random_device mch;
     std::default_random_engine generator(mch());
     std::uniform_real_distribution<double> distribution(0.0,maxR);
 
-    double U = distribution(generator) * weightSum;
+    double U = distribution(generator);
     double c = posterior_.at(0).weight;
 
 
     int i = 0;
 
     for(int m = 0; m < int(prior.size()); m++){
-        if (m >= 1){ U += (maxR) * weightSum; }
+        if (m >= 1){ U += (maxR); }
 
         while (U > c){
           i += 1;
           c += posterior_.at(i).weight;
         }
         prior.at(m) = posterior_.at(i);
-
     }
 
     return prior;
@@ -125,11 +120,13 @@ std::vector<particle_t> ParticleFilter::computeProposalDistribution(const std::v
 {
     //////////// TODO: Implement your algorithm for creating the proposal distribution by sampling from the ActionModel
     std::vector<particle_t> proposal;
-
+    //
     proposal = prior;
 
     for(int i = 0; i < int(proposal.size()); i++){
         proposal.at(i) = actionModel_.applyAction(prior.at(i));
+        proposal.at(i).weight = prior.at(i).weight;
+
     }
 
     return proposal;
@@ -147,8 +144,20 @@ std::vector<particle_t> ParticleFilter::computeNormalizedPosterior(const std::ve
     posterior = proposal;
 
     for(int i = 0; i < int(posterior.size()); i++){
-        posterior.at(i).weight = sensorModel_.likelihood(proposal.at(i), laser, map);
+        posterior.at(i).weight =  1.0 / kNumParticles_;
     }
+    float sum_weights = 0.0;
+
+    for(int i = 0; i < int(posterior.size()); i++)
+    {
+      sum_weights += posterior.at(i).weight;
+    }
+    for(int i = 0; i < int(posterior.size()); i++)
+    {
+      posterior.at(i).weight /= sum_weights;
+
+    }
+
 
     return posterior;
 }
@@ -159,14 +168,18 @@ pose_xyt_t ParticleFilter::estimatePosteriorPose(const std::vector<particle_t>& 
     //////// TODO: Implement your method for computing the final pose estimate based on the posterior distribution
     pose_xyt_t pose;
 
-    double maxWeight = posterior.at(0).weight;
+    pose.x = 0.0;
+    pose.y = 0.0;
+    pose.theta = 0.0;
 
-    for(int i = 1; i < int(posterior.size()); i++){
-        if(posterior.at(i).weight > maxWeight){
-          maxWeight = posterior.at(i).weight;
-          pose = posterior.at(i).pose;
-        }
+    for(int i = 0; i < int(posterior.size()); i++){
+        pose.x += posterior.at(i).pose.x * posterior.at(i).weight;
+        pose.y += posterior.at(i).pose.y * posterior.at(i).weight;
+        pose.theta += posterior.at(i).pose.theta * posterior.at(i).weight;
     }
 
+
+
     return pose;
+
 }

@@ -46,10 +46,10 @@ private:
 
     ///////// TODO: Add any private members for your SensorModel ///////////////////
 
-    float z_hit, z_short, z_max, z_rand;
-    float lambda_short;
-    float sigma_hit;
-    float maxLaserDistance;
+    // float z_hit, z_short, z_max, z_rand;
+    // float lambda_short;
+    // float sigma_hit;
+    // float maxLaserDistance;
 
 };
 

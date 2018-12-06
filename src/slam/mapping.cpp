@@ -205,7 +205,7 @@ void Mapping::bresenhamLineUpdate(Point<int> firstCell, Point<int> secondCell, O
 
 int Mapping::clampCellLogOdds(int logOdd){
   if(logOdd > 127){ return 127; }
-  else if(logOdd < -128) { return -128; }
+  else if(logOdd < -127) { return -127; }
   else { return logOdd; }
 }
 
