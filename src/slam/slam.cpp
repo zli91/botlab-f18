@@ -237,9 +237,9 @@ void OccupancyGridSLAM::initializePosesIfNeeded(void)
         currentPose_ = previousPose_;
         currentPose_.utime  = currentScan_.times.back();
         haveInitializedPoses_ = true;
-        std::cout <<"before initialize filter"<<std::endl;
+        // std::cout <<"before initialize filter"<<std::endl;
         filter_.initializeFilterAtPose(previousPose_);
-        std::cout <<"after  initialize filter"<<std::endl;
+        // std::cout <<"after  initialize filter"<<std::endl;
     }
 
     assert(haveInitializedPoses_);

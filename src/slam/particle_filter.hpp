@@ -85,8 +85,8 @@ private:
     int kNumParticles_;         // Number of particles to use for estimating the pose
 
     std::vector<particle_t> resamplePosteriorDistribution(void);
-    std::vector<particle_t> computeProposalDistribution(const std::vector<particle_t>& prior);
-    std::vector<particle_t> computeNormalizedPosterior(const std::vector<particle_t>& proposal,
+    std::vector<particle_t> computeProposalDistribution(std::vector<particle_t>& prior);
+    std::vector<particle_t> computeNormalizedPosterior(std::vector<particle_t>& proposal,
                                                        const lidar_t& laser,
                                                        const OccupancyGrid&   map);
     pose_xyt_t estimatePosteriorPose(const std::vector<particle_t>& posterior);

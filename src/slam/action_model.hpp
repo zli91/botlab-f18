@@ -51,7 +51,7 @@ public:
     * \param    sample          Sample to be moved
     * \return   New sample based on distribution from the motion model at the current update.
     */
-    particle_t applyAction(const particle_t& sample);
+    particle_t applyAction(particle_t& sample);
 
 private:
 

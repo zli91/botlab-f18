@@ -21,7 +21,7 @@ SensorModel::SensorModel(void)
     // lambda_short = 0.02f;
     // sigma_hit = 0.05f;
 
-    // maxLaserDistance = 5.0f;
+    maxLaserDistance = 5.0f;
 }
 
 
@@ -30,7 +30,7 @@ double SensorModel::likelihood(const particle_t& sample, const lidar_t& scan, co
     ///////////// TODO: Implement your sensor model for calculating the likelihood of a particle given a laser scan //////////
     float q = 0.0000000001f;
 
-    MovingLaserScan movingScan(scan, sample.parent_pose, sample.pose, 50);//1);
+    MovingLaserScan movingScan(scan, sample.parent_pose, sample.pose, 10);//1);
 
     int N = movingScan.size();
 
@@ -38,28 +38,39 @@ double SensorModel::likelihood(const particle_t& sample, const lidar_t& scan, co
     double hitY;
     Point<int> hitCellXY;
 
-    double delta_x = (sample.parent_pose.x - sample.parent_pose.x) / (N - 1);
-    double delta_y = (sample.parent_pose.y - sample.parent_pose.y) / (N - 1);
+    double delta_x = (sample.pose.x - sample.parent_pose.x) / (N - 1);
+    double delta_y = (sample.pose.y - sample.parent_pose.y) / (N - 1);
+    int i = 0;
 
-    for(int i = 0; i < N ; i++){
-      hitX = sample.parent_pose.x + i * delta_x + movingScan.at(i).range*cos(movingScan.at(i).theta);
-      hitY = sample.parent_pose.y + i * delta_y + movingScan.at(i).range*sin(movingScan.at(i).theta);
+    // for(int i = 0; i < N ; i++){
+    for(auto& ray : movingScan){
+        if (ray.range < maxLaserDistance){
+            hitX = sample.parent_pose.x + i * delta_x + ray.range*cos(ray.theta);
+            hitY = sample.parent_pose.y + i * delta_y + ray.range*sin(ray.theta);
 
-
-      /* origin was messing things up and I dont know why...*/
-      // hitX = movingScan.at(i).origin.x + movingScan.at(i).range*cos(movingScan.at(i).theta);
-      // hitY = movingScan.at(i).origin.y + movingScan.at(i).range*sin(movingScan.at(i).theta);
-
-      hitCellXY = global_position_to_grid_cell({hitX, hitY}, map);
+            i++;
 
 
-      if(map.isCellInGrid(hitCellXY.x, hitCellXY.y)){
-          q += (map.logOdds(hitCellXY.x, hitCellXY.y) + 128) / 100.0;
-      }
-      else{
-        // std::cout << "trying to get logodds out of grid..." << std::endl;
-      }
+            /* origin was messing things up and I dont know why...*/
+            // hitX = movingScan.at(i).origin.x + movingScan.at(i).range*cos(movingScan.at(i).theta);
+            // hitY = movingScan.at(i).origin.y + movingScan.at(i).range*sin(movingScan.at(i).theta);
 
+            hitCellXY = global_position_to_grid_cell({hitX, hitY}, map);
+
+
+            if(map.isCellInGrid(hitCellXY.x, hitCellXY.y)){
+                q += (map.logOdds(hitCellXY.x, hitCellXY.y) + 128) / 100.0;
+            }
+            // else{
+            //   std::cout << "error trying to get logodds out of grid..." << std::endl;
+            //   std::cout << "hitX: " << hitX << std::endl;
+            //   std::cout << "hitY: " << hitY << std::endl;
+            //   std::cout << "sample.parent_pose.x: " << sample.parent_pose.x << std::endl;
+            //   std::cout << "sample.parent_pose.y: " << sample.parent_pose.y << std::endl;
+            //   std::cout << "movingScan.at(i).range: " << movingScan.at(i).range << std::endl;
+            //   std::cout << "movingScan.at(i).theta: " << movingScan.at(i).theta << std::endl;
+            // }
+        }
     }
 
 

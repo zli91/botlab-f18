@@ -26,9 +26,9 @@ void ParticleFilter::initializeFilterAtPose(const pose_xyt_t& pose)
     std::random_device mch;
     std::default_random_engine generator(mch());
 
-    std::normal_distribution<double> distributionX(0.0, 0.25);//0.0
-    std::normal_distribution<double> distributionY(0.0, 0.25);//0.0
-    std::normal_distribution<double> distributionT(0.0, 3.1415926/10.0);
+    std::normal_distribution<double> distributionX(0.0, 0.05);//0.0
+    std::normal_distribution<double> distributionY(0.0, 0.05);//0.0
+    std::normal_distribution<double> distributionT(0.0, 3.1415926/100.0);
     for(int i = 0; i < kNumParticles_; i++){
         posterior_.at(i).pose = pose;
 
@@ -57,7 +57,7 @@ pose_xyt_t ParticleFilter::updateFilter(const pose_xyt_t&      odometry,
         auto proposal = computeProposalDistribution(prior);
         posterior_ = computeNormalizedPosterior(proposal, laser, map);
         posteriorPose_ = estimatePosteriorPose(posterior_);
-        printf("pose:x, y, theta: %f, %f, %f\n", posteriorPose_.x, posteriorPose_.y, posteriorPose_.theta);
+        // printf("pose:x, y, theta: %f, %f, %f\n", posteriorPose_.x, posteriorPose_.y, posteriorPose_.theta);
     }
 
     posteriorPose_.utime = odometry.utime;
@@ -116,50 +116,59 @@ std::vector<particle_t> ParticleFilter::resamplePosteriorDistribution(void)
 }
 
 
-std::vector<particle_t> ParticleFilter::computeProposalDistribution(const std::vector<particle_t>& prior)
+std::vector<particle_t> ParticleFilter::computeProposalDistribution(std::vector<particle_t>& prior)
 {
     //////////// TODO: Implement your algorithm for creating the proposal distribution by sampling from the ActionModel
-    std::vector<particle_t> proposal;
+    // std::vector<particle_t> proposal;
     //
-    proposal = prior;
+    // proposal = prior;
 
-    for(int i = 0; i < int(proposal.size()); i++){
-        proposal.at(i) = actionModel_.applyAction(prior.at(i));
-        proposal.at(i).weight = prior.at(i).weight;
+    // for(int i = 0; i < int(prior.size()); i++){
+    for(auto& particle : prior){
+        particle = actionModel_.applyAction(particle);
+        // proposal.at(i).weight = prior.at(i).weight;
 
     }
 
-    return proposal;
+    return prior;
 }
 
 
-std::vector<particle_t> ParticleFilter::computeNormalizedPosterior(const std::vector<particle_t>& proposal,
+std::vector<particle_t> ParticleFilter::computeNormalizedPosterior(std::vector<particle_t>& proposal,
                                                                    const lidar_t& laser,
                                                                    const OccupancyGrid&   map)
 {
     /////////// TODO: Implement your algorithm for computing the normalized posterior distribution using the
     ///////////       particles in the proposal distribution
-    std::vector<particle_t> posterior;
+    // std::vector<particle_t> posterior;
 
-    posterior = proposal;
+    // posterior = proposal;
 
-    for(int i = 0; i < int(posterior.size()); i++){
-        posterior.at(i).weight =  1.0 / kNumParticles_;
-    }
+
     float sum_weights = 0.0;
+    // for(int i = 0; i < int(proposal.size()); i++){
+    for(auto& particle : proposal){
+        particle.weight = sensorModel_.likelihood(particle, laser, map);
+        // proposal.at(i).weight = sensorModel_.likelihood(proposal[i], laser, map);
+        // posterior.at(i).weight = 1.0 / kNumParticles_;
 
-    for(int i = 0; i < int(posterior.size()); i++)
-    {
-      sum_weights += posterior.at(i).weight;
-    }
-    for(int i = 0; i < int(posterior.size()); i++)
-    {
-      posterior.at(i).weight /= sum_weights;
-
+        sum_weights += particle.weight;
     }
 
 
-    return posterior;
+    // for(int i = 0; i < int(posterior.size()); i++)
+    // {
+    //   sum_weights += posterior.at(i).weight;
+    // }
+    // for(int i = 0; i < int(proposal.size()); i++)
+    for(auto& particle : proposal)
+    {
+      particle.weight /= sum_weights;
+
+    }
+
+
+    return proposal;
 }
 
 
