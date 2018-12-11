@@ -16,6 +16,7 @@ Mapping::Mapping(float maxLaserDistance, int8_t hitOdds, int8_t missOdds)
 : kMaxLaserDistance_(maxLaserDistance)
 , kHitOdds_(hitOdds)
 , kMissOdds_(missOdds)
+, firstUpdate_(1)
 {
 }
 
@@ -23,16 +24,30 @@ Mapping::Mapping(float maxLaserDistance, int8_t hitOdds, int8_t missOdds)
 void Mapping::updateMap(const lidar_t& scan, const pose_xyt_t& pose, OccupancyGrid& map)
 {
     //////////////// TODO: Implement your occupancy grid algorithm here ///////////////////////
-  for(int i = 0; i <= scan.num_ranges; i++){
-    double botX = pose.x;
-    double botY = pose.y;
-    double botTheta = pose.theta;
 
+  if(firstUpdate_){
+    currentPose = pose;
+    firstUpdate_ = 0;
+    return;
+  }
+
+  lastPose = currentPose;
+
+  currentPose = pose;
+
+  MovingLaserScan movingScan(scan, lastPose, pose, 1);
+
+  int N = movingScan.size();
+
+
+  for(int i = 0; i < N ; i++){
+    double botX = movingScan.at(i).origin.x;
+    double botY = movingScan.at(i).origin.y;
     Point<int> botCellXY = global_position_to_grid_cell({botX, botY}, map);
 
-    if (scan.ranges[i] < kMaxLaserDistance_){
-      double hitX = botX + cos(botTheta - scan.thetas[i])*scan.ranges[i];
-      double hitY = botY + sin(botTheta - scan.thetas[i])*scan.ranges[i];
+    if (movingScan.at(i).range < kMaxLaserDistance_){
+      double hitX = movingScan.at(i).origin.x + movingScan.at(i).range*cos(movingScan.at(i).theta);
+      double hitY = movingScan.at(i).origin.y + movingScan.at(i).range*sin(movingScan.at(i).theta);
       Point<int> hitCellXY = global_position_to_grid_cell({hitX, hitY}, map);
 
       bresenhamLineUpdate(botCellXY, hitCellXY, map);
@@ -40,9 +55,11 @@ void Mapping::updateMap(const lidar_t& scan, const pose_xyt_t& pose, OccupancyGr
     }
   }
 
-  if(map.saveToFile("../data/myMap.map")){
-      std::cout << "Map updated!" << '\n';
-  }
+  // if(map.saveToFile("../data/myMap.map")){
+  //     std::cout << "Map updated!" << '\n';
+  // }
+
+
   return;
 }
 
@@ -51,19 +68,19 @@ void Mapping::updateMap(const lidar_t& scan, const pose_xyt_t& pose, OccupancyGr
 * We may not use it because there is a different function in grid_utils.hpp
 * that does exactly the same thing;
 **/
-Point<int> Mapping::xy2Cell(const float x, const float y, OccupancyGrid& map){
-  float globalPositionX = x;
-  float globalPositionY = y;
-
-  int gridWidth = map.widthInCells();
-  int gridHeight = map.heightInCells();
-  float cellSide = map.metersPerCell();
-
-  int gridPositionX = int(floor(globalPositionX / cellSide) + gridWidth/2);
-  int gridPositionY = int(floor(globalPositionY / cellSide) + gridHeight/2);
-
-  return {gridPositionX, gridPositionY};
-}
+// Point<int> Mapping::xy2Cell(const float x, const float y, OccupancyGrid& map){
+//   float globalPositionX = x;
+//   float globalPositionY = y;
+//
+//   int gridWidth = map.widthInCells();
+//   int gridHeight = map.heightInCells();
+//   float cellSide = map.metersPerCell();
+//
+//   int gridPositionX = int(floor(globalPositionX / cellSide) + gridWidth/2);
+//   int gridPositionY = int(floor(globalPositionY / cellSide) + gridHeight/2);
+//
+//   return {gridPositionX, gridPositionY};
+// }
 
 
 /**
@@ -82,6 +99,9 @@ void Mapping::bresenhamLineUpdate(Point<int> firstCell, Point<int> secondCell, O
 
     int dx = x1 - x0;
     int dy = y1 - y0;
+
+    // int dx = secondCell.x - firstCell.x;
+    // int dy = secondCell.y - firstCell.y;
 
     // Determine if the line is steep. If so, rotate;
     int isSteep = std::abs(dy) > std::abs(dx) ? 1 : 0;
@@ -188,6 +208,14 @@ void Mapping::bresenhamLineUpdate(Point<int> firstCell, Point<int> secondCell, O
 
 int Mapping::clampCellLogOdds(int logOdd){
   if(logOdd > 127){ return 127; }
-  else if(logOdd < -128) { return -128; }
+  else if(logOdd < -127) { return -127; }
   else { return logOdd; }
 }
+
+// void Mapping::setLastPose(const float & poseX, const float & poseY, const float & poseT){
+//
+//     lastPose.x = poseX;
+//     lastPose.y = poseY;
+//     lastPose.theta = poseT;
+//     return;
+// }

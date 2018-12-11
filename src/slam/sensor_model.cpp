@@ -3,17 +3,174 @@
 #include <slam/occupancy_grid.hpp>
 #include <lcmtypes/particle_t.hpp>
 #include <common/grid_utils.hpp>
+#include <cassert>
+#include <cmath>
+#include <iostream>
+
+using namespace std;
 
 
 SensorModel::SensorModel(void)
 {
     ///////// TODO: Handle any initialization needed for your sensor model
+    // z_hit = 0.8f;
+    // z_short = 0.05f;
+    // z_max = 0.1f;
+    // z_rand = 0.05f;
+    //
+    // lambda_short = 0.02f;
+    // sigma_hit = 0.05f;
+
+    maxLaserDistance = 5.0f;
 }
 
 
 double SensorModel::likelihood(const particle_t& sample, const lidar_t& scan, const OccupancyGrid& map)
 {
     ///////////// TODO: Implement your sensor model for calculating the likelihood of a particle given a laser scan //////////
-    
-    return 1.0;
+    float q = 0.0000000001f;
+
+    MovingLaserScan movingScan(scan, sample.parent_pose, sample.pose, 10);//1);
+
+    int N = movingScan.size();
+
+    double hitX;
+    double hitY;
+    Point<int> hitCellXY;
+
+    double delta_x = (sample.pose.x - sample.parent_pose.x) / (N - 1);
+    double delta_y = (sample.pose.y - sample.parent_pose.y) / (N - 1);
+    int i = 0;
+
+    // for(int i = 0; i < N ; i++){
+    for(auto& ray : movingScan){
+        if (ray.range < maxLaserDistance){
+            hitX = sample.parent_pose.x + i * delta_x + ray.range*cos(ray.theta);
+            hitY = sample.parent_pose.y + i * delta_y + ray.range*sin(ray.theta);
+
+            i++;
+
+
+            /* origin was messing things up and I dont know why...*/
+            // hitX = movingScan.at(i).origin.x + movingScan.at(i).range*cos(movingScan.at(i).theta);
+            // hitY = movingScan.at(i).origin.y + movingScan.at(i).range*sin(movingScan.at(i).theta);
+
+            hitCellXY = global_position_to_grid_cell({hitX, hitY}, map);
+
+
+            if(map.isCellInGrid(hitCellXY.x, hitCellXY.y)){
+                q += (map.logOdds(hitCellXY.x, hitCellXY.y) + 128) / 100.0;
+            }
+            // else{
+            //   std::cout << "error trying to get logodds out of grid..." << std::endl;
+            //   std::cout << "hitX: " << hitX << std::endl;
+            //   std::cout << "hitY: " << hitY << std::endl;
+            //   std::cout << "sample.parent_pose.x: " << sample.parent_pose.x << std::endl;
+            //   std::cout << "sample.parent_pose.y: " << sample.parent_pose.y << std::endl;
+            //   std::cout << "movingScan.at(i).range: " << movingScan.at(i).range << std::endl;
+            //   std::cout << "movingScan.at(i).theta: " << movingScan.at(i).theta << std::endl;
+            // }
+        }
+    }
+
+
+
+    return q;
+
+
 }
+
+
+
+
+
+// SensorModel::SensorModel(void)
+// {
+//     ///////// TODO: Handle any initialization needed for your sensor model
+//     z_hit = 0.8f;
+//     z_short = 0.05f;
+//     z_max = 0.1f;
+//     z_rand = 0.05f;
+//
+//     lambda_short = 0.02f;
+//     sigma_hit = 0.05f;
+//
+//     maxLaserDistance = 5.0f;
+// }
+//
+//
+// double SensorModel::likelihood(const particle_t& sample, const lidar_t& scan, const OccupancyGrid& map)
+// {
+//     ///////////// TODO: Implement your sensor model for calculating the likelihood of a particle given a laser scan //////////
+//     float q = 1.0f;
+//
+//     MovingLaserScan movingScan(scan, sample.parent_pose, sample.pose, 10);//1);
+//
+//     int N = movingScan.size();
+//     float zStar;
+//
+//     for(int i = 0; i < N ; i++){
+//
+//         zStar = rayCasting(movingScan.at(i).origin.x, movingScan.at(i).origin.y, movingScan.at(i).theta, map);
+//         q *= z_hit * pHit(movingScan.at(i).range, zStar) + z_short * pShort(movingScan.at(i).range, zStar) + z_max * pMax(movingScan.at(i).range) + z_rand * pRand(movingScan.at(i).range);
+//     }
+//     q += 0.000000000001f;
+//
+//     return q;
+// }
+//
+// float SensorModel::rayCasting(float originX, float originY, float angle, const OccupancyGrid& map){
+//
+//     float squareSide = map.metersPerCell();
+//
+//     int N = floor(2 * maxLaserDistance / squareSide);
+//
+//     float testPointX, testPointY;
+//
+//     for(int i = 2; i < N; i++){
+//         testPointX = originX + i * squareSide * cos(angle) / 2;
+//         testPointY = originY + i * squareSide * sin(angle) / 2;
+//         Point<int> testPoint = global_position_to_grid_cell({testPointX, testPointY}, map);
+//
+//         CellOdds odd = map.logOdds(testPoint.x, testPoint.y);
+//
+//         if (odd > 0){
+//           return i * squareSide / 2;
+//         }
+//     }
+//
+//     return maxLaserDistance;
+// }
+//
+//
+// float SensorModel::pHit(float distance, float zStar){
+//     if (distance <= maxLaserDistance) {
+//         return exp(- (distance - zStar)*(distance - zStar) / (2 * sigma_hit*sigma_hit)) / sqrt(2 * 3.1415926 * sigma_hit * sigma_hit);
+//     } else{
+//         return 0.0f;
+//     }
+// }
+//
+// float SensorModel::pShort(float distance, float zStar){
+//     if(distance <= zStar){
+//       return lambda_short * exp(-lambda_short * distance);
+//     } else{
+//         return 0.0f;
+//     }
+// }
+//
+// float SensorModel::pMax(float distance){
+//     if (distance == maxLaserDistance) {
+//         return 1.0f;
+//     } else{
+//         return 0.0f;
+//     }
+// }
+//
+// float SensorModel::pRand(float distance){
+//     if(distance <= maxLaserDistance){
+//         return (1.0 / maxLaserDistance);
+//     } else{
+//         return 0.0f;
+//     }
+// }
