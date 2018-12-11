@@ -62,11 +62,11 @@ int main(int argc, char** argv)
     
     typedef bool (*test_func) (void);
     std::vector<test_func> tests = { 
-        test_empty_grid,
-        test_filled_grid,
-        test_narrow_constriction_grid,
-        test_wide_constriction_grid,
-        test_convex_grid,
+        // test_empty_grid,
+        // test_filled_grid,
+        // test_narrow_constriction_grid,
+        // test_wide_constriction_grid,
+        // test_convex_grid,
         test_maze_grid
     };
     
@@ -310,11 +310,11 @@ bool is_safe_cell(int x, int y, double robotRadius, const OccupancyGrid& map)
 }
 
 
-std::ostream& operator<<(std::ostream& out, const pose_xyt_t& pose)
-{
-    out << '(' << pose.x << ',' << pose.y << ',' << pose.theta << ')';
-    return out;
-}
+// std::ostream& operator<<(std::ostream& out, const pose_xyt_t& pose)
+// {
+//     out << '(' << pose.x << ',' << pose.y << ',' << pose.theta << ')';
+//     return out;
+// }
 
 
 void print_timing_info(timing_info_t& info)

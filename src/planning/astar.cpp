@@ -1,10 +1,15 @@
 #include <planning/astar.hpp>
 #include <planning/obstacle_distance_grid.hpp>
 #include <bits/stdc++.h> 
-
+#include <iostream>
 using namespace std;
 
-
+// std::ostream& operator<<(std::ostream& out, const pose_xyt_t& pose);
+std::ostream& operator<<(std::ostream& out, const pose_xyt_t& pose)
+{
+    out << '(' << pose.x << ',' << pose.y << ',' << pose.theta << ')';
+    return out;
+};
 
 // Creating a shortcut for int, int pair type 
 typedef pair<int, int> Pair; 
@@ -36,8 +41,8 @@ Pair IndexSwap(int x, int y)
 
 Pair Coor2Index(pose_xyt_t coor, float globalOx, float globalOy,float metersPerCell)
 { 
-	int Indx = int((coor.x - globalOx)/metersPerCell);
-	int Indy = int((-coor.y - globalOy)/metersPerCell);
+	int Indx = int(floor((coor.x - globalOx)/metersPerCell));
+	int Indy = int(ceil((-coor.y - globalOy)/metersPerCell));
 	//swapping
 	Pair output = IndexSwap(Indx,Indy);
 	return output;
@@ -74,29 +79,54 @@ bool isDestination(int row, int col, Pair dest)
         return (false); 
 } 
 
-void printSolMap(ObstacleDistanceGrid distances)
+void printSolMap(ObstacleDistanceGrid distances, Pair start, Pair goal)
 {
 
     cout<<"setDistance: after all loops "<<endl;
     cout << left;
     int width_ = distances.widthInCells();
     int height_ = distances.heightInCells();
+    // for(int y = 0; y < height_; ++y)
+    // {
+    //     for(int x = 0; x < width_; ++x)
+    //     {
+    //         // Unary plus forces output to be a a number rather than a character
+    //         if(distances (x, y) >= float(60)){
+    //         	cout << setw(4) << setprecision(3) << distances (x, y);
+    //         }
+    //         else if(distances (x, y) == float(0)){
+    //         	cout << setw(4) << setprecision(3) << float(1);
+    //         }
+    //         else
+    //         cout << setw(4) << setprecision(3) << min(distances (x, y),float(0.0));
+    //     }
+    //     cout << '\n';
+    // }
+    
     for(int y = 0; y < height_; ++y)
     {
         for(int x = 0; x < width_; ++x)
         {
             // Unary plus forces output to be a a number rather than a character
-            if(distances (x, y) >= float(60)){
-            	cout << setw(4) << setprecision(3) << distances (x, y);
+            if(distances (x, y) == float(77)){
+                distances (x, y) = 7;
+            }
+            else if(distances (x, y) == float(76)){
+                distances (x, y) = 9;
             }
             else if(distances (x, y) == float(0)){
-            	cout << setw(4) << setprecision(3) << float(1);
+                distances (x, y) = 0;
             }
-            else
-            cout << setw(4) << setprecision(3) << min(distances (x, y),float(0.0));
+            else {
+                distances (x, y) = 1;
+            }
+            
         }
-        cout << '\n';
+        // cout << '\n';
     }
+    distances (start.second, start.first) = float(6);
+    distances (goal.second, goal.first) = float(8);
+    distances.saveToFile("current_SOL_map.txt");
 }
 double distCost(int i0, int j0, Pair dest,const ObstacleDistanceGrid& distances,const SearchParams& params)
 {
@@ -124,7 +154,7 @@ robot_path_t tracePath(cell** cellDetails, pose_xyt_t start, pose_xyt_t goal, Ob
     Point<float> globalOrigin = distances.originInGlobalFrame();
     float globalOx = globalOrigin.x;
     float globalOy = globalOrigin.y;
-
+    Pair StartInd = Coor2Index(start,globalOx,globalOy,metersPerCell);
 	Pair DestInd = Coor2Index(goal,globalOx,globalOy,metersPerCell);
 	robot_path_t path;
     // printf ("Astar:Tracing back\n"); 
@@ -139,7 +169,8 @@ robot_path_t tracePath(cell** cellDetails, pose_xyt_t start, pose_xyt_t goal, Ob
     // stack <Pair> Path
   	path.utime = start.utime;
   	path.path.push_back(goal);
-  	distances(col,row) = 88;
+
+  	// distances(col,row) = 88;
 
   	pose_xyt_t temp;
   	
@@ -156,31 +187,51 @@ robot_path_t tracePath(cell** cellDetails, pose_xyt_t start, pose_xyt_t goal, Ob
         // Path.push (make_pair (row, col)); 
         input.first = row;
     	input.second = col;
-    	distances(col,row) = 77;
+    	
         temp = Index2Coor(input, globalOx, globalOy, metersPerCell);
         int temp_row = cellDetails[row][col].parent_i; 
         int temp_col = cellDetails[row][col].parent_j; 
+
         int delj = temp_row - row;
         int deli = temp_col - col;
-        if(abs(delj) == 0 )
+
+        // cout<<"astar: tracepath: distance is actually:"<< distances(col,row) <<'\n';
+
+        if(distances(col,row) > 0.4) 
+            {   
+                // distances(col,row) = 77;
+                row = temp_row; 
+                col = temp_col; 
+                continue;
+            }
+        else if(abs(delj) == 0 )
         {
-        	// temp.theta = 
-        	// thetaWatcher = ;
-        	currenttheta = (float(deli) + 1.0)*M_PI/2.0;
+            // temp.theta = 
+            // thetaWatcher = ;
+            currenttheta = (float(deli) + 1.0)*M_PI/2.0;
         }
         else 
         {
-        	// temp.theta 
-        	currenttheta = float((delj))* M_PI/2.0 + float((delj)*(deli)) * M_PI/4.0;
+            // temp.theta 
+            currenttheta = float((delj))* M_PI/2.0 + float((delj)*(deli)) * M_PI/4.0;
         }
         if(thetaWatcher != currenttheta && thetaWatcher < M_PI)
         {
-        	// temp.theta = currenttheta;
-        	path.path.push_back(temp);
+            // temp.theta = currenttheta;
+            
         }
-        thetaWatcher = currenttheta;
-        row = temp_row; 
-        col = temp_col; 
+        else
+        {
+            path.path.push_back(temp);
+            distances(col,row) = 76;
+            thetaWatcher = currenttheta; 
+            row = temp_row; 
+            col = temp_col;
+        }
+
+        // cout<<"astar: tracepath: pushed once"<<'\n';
+        
+
     } 
   
     // Path.push (make_pair (row, col)); 
@@ -193,9 +244,18 @@ robot_path_t tracePath(cell** cellDetails, pose_xyt_t start, pose_xyt_t goal, Ob
     path.path.push_back(start);
     distances(col,row) = 66;
   	path.path_length = path.path.size();
-  	cout<<"path_size is actually: "<<path.path.size()<<'\n';
+  	cout<<"Astar:path_size is actually: "<<path.path.size()<<'\n';
   	reverse(path.path.begin(),path.path.end());
-  	printSolMap(distances);
+    cout<<"Astar: Printing the path: ";
+    for(auto p = path.path.begin(); p != path.path.end()-1; ++p)
+    {
+        // if (&p != path.path.back()) 
+        cout<< (*p) << "->";
+        // else
+        // cout<< &p << '\n';
+    }
+    cout<< path.path.back() <<'\n';
+  	printSolMap(distances,StartInd,DestInd);
     return path; 
 } 
 
@@ -218,9 +278,9 @@ robot_path_t search_for_path(pose_xyt_t start,
     memset(closedList, false, sizeof (closedList)); 
     Pair StartInd = Coor2Index(start,globalOx,globalOy,gcoef);
     Pair DestInd = Coor2Index(goal,globalOx,globalOy,gcoef);
-    // cout<<"a*: start and gold index:"<<'\n';
-    // printPair(StartInd);
-    // printPair(DestInd);
+    cout<<"a*: start and gold index:"<<'\n';
+    printPair(StartInd);
+    printPair(DestInd);
     // cell cellDetails[width][height]; 
     cell **cellDetails;
 	cellDetails = new cell*[width]; // dynamic array (size 10) of pointers to int
@@ -256,6 +316,7 @@ robot_path_t search_for_path(pose_xyt_t start,
 // Put the starting cell on the open list and set its 
 // 'f' as 0 
 	set<pPair> openList; 
+    int insertion_counter = 0;
 	openList.insert(make_pair (0.0, make_pair (i, j))); 
 	bool foundDest = false; 
     int Row[] = {-1, 1, 0, 0, -1, -1, 1, 1};
@@ -310,11 +371,12 @@ robot_path_t search_for_path(pose_xyt_t start,
 
         for (int iter = 0; iter < 8 ; iter++ )
         {	
-        	// cout<<"Astar: Entered 8 iteration loops"<<'\n';
+        	// cout<<"Astar: Entered 8 iteration loops and dist(j,i) = "<< distances(j,i) <<'\n';
         	i = curr_i + Row[iter];
         	j = curr_j + Col[iter];
         	if (isValid(i, j, width, height) == true) 
 	        { 
+                // cout<<"Astar: Entered 8 iteration loops: and cell is valid"<<'\n';
 	            // If the destination cell is the same as the 
 	            // current successor 
 	            if (isDestination(i, j, DestInd) == true) 
@@ -329,8 +391,7 @@ robot_path_t search_for_path(pose_xyt_t start,
 	            // If the successor is already on the closed 
 	            // list or if it is blocked, then ignore it. 
 	            // Else do the following 
-	            else if (closedList[i][j] == false && 
-	                     distances(j,i)>int8_t(0)) 
+	            else if (closedList[i][j] == false && distances(j,i) > 0.0 ) 
 	            { 
 	            	
 	                gNew = cellDetails[curr_i][curr_j].g + Movecost[iter] * gcoef; 
@@ -349,7 +410,7 @@ robot_path_t search_for_path(pose_xyt_t start,
 	                if (cellDetails[i][j].f == FLT_MAX || cellDetails[i][j].f > fNew) 
 	                { 
 	                    openList.insert( make_pair(fNew, make_pair(i, j))); 
-	  
+	                    insertion_counter++;
 	                    // Update the details of this cell 
 	                    cellDetails[i][j].f = fNew; 
 	                    cellDetails[i][j].g = gNew; 
@@ -365,9 +426,10 @@ robot_path_t search_for_path(pose_xyt_t start,
 
     if (foundDest == false) 
     {
-        printf("Astar: Failed to find the Destination Cell\n"); 
+        cout<<"Astar: Failed to find the Destination Cell with insertion: "<< insertion_counter << '\n'; 
     	robot_path_t path;
     	path.utime = start.utime;
+        printSolMap(distances,StartInd,DestInd);
     	path.path.push_back(start); 
     	path.path_length = path.path.size();
     	return path;  

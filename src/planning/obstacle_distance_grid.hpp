@@ -70,6 +70,7 @@ public:
     */
     float operator()(int x, int y) const { return cells_[cellIndex(x, y)]; }
     float& operator()(int x, int y) { return cells_[cellIndex(x, y)]; }
+    bool saveToFile(const std::string& filename) const;
     
 private:
     

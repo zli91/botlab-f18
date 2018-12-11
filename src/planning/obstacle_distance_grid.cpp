@@ -2,6 +2,7 @@
 #include <slam/occupancy_grid.hpp>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 using namespace std;
 
 ObstacleDistanceGrid::ObstacleDistanceGrid(void)
@@ -64,19 +65,19 @@ void ObstacleDistanceGrid::setDistances(const OccupancyGrid& map)
                  }    
             }
         }
+        saveToFile("current_Obstacle_distance.txt");
 
-
-        cout<<"setDistance: after all loops "<<endl;
-        cout << left;
-        for(int y = 0; y < height_; ++y)
-        {
-            for(int x = 0; x < width_; ++x)
-            {
-                // Unary plus forces output to be a a number rather than a character
-                cout << setw(4) << setprecision(2) << operator()(x, y);
-            }
-            cout << '\n';
-        }
+        // cout<<"setDistance: after all loops "<<endl;
+        // cout << left;
+        // for(int y = 0; y < height_; ++y)
+        // {
+        //     for(int x = 0; x < width_; ++x)
+        //     {
+        //         // Unary plus forces output to be a a number rather than a character
+        //         cout << setw(4) << setprecision(2) << operator()(x, y);
+        //     }
+        //     cout << '\n';
+        // }
 }
 
 
@@ -88,7 +89,7 @@ bool ObstacleDistanceGrid::isCellInGrid(int x, int y) const
 
 void ObstacleDistanceGrid::resetGrid(const OccupancyGrid& map)
 {
-    std::cout << "resetGrid: enterred"<< std::endl;
+    // std::cout << "resetGrid: enterred"<< std::endl;
     // Ensure the same cell sizes for both grid
     metersPerCell_ = map.metersPerCell();
     cellsPerMeter_ = map.cellsPerMeter();
@@ -107,7 +108,7 @@ void ObstacleDistanceGrid::resetGrid(const OccupancyGrid& map)
     height_ = map.heightInCells();
     
     cells_.resize(width_ * height_);
-    std::cout << "resetGrid: pre Save file"<< std::endl;
+    // std::cout << "resetGrid: pre Save file"<< std::endl;
     map.saveToFile("current_Occu_Grid_Logodds.txt");
 
     // std::cout<<"Obstacle Dis grid size: "<< width_<<" ,"<<height_<<std::endl;
@@ -115,4 +116,30 @@ void ObstacleDistanceGrid::resetGrid(const OccupancyGrid& map)
     // for(int i=0; i<int(cells_.size()); ++i)
     //     std::cout << cells_[i] << ' ';
     //     std::cout << std::endl;
+}
+
+bool ObstacleDistanceGrid::saveToFile(const std::string& filename) const
+{
+    std::ofstream out(filename);
+    if(!out.is_open())
+    {
+        std::cerr << "ERROR: ObstacleDistanceGrid::saveToFile: Failed to save to " << filename << '\n';
+        return false;
+    }
+    
+    // Write header
+    out << globalOrigin_.x << ' ' << globalOrigin_.y << ' ' << width_ << ' ' << height_ << ' ' << metersPerCell_ << '\n';
+    
+    // Write out each cell value
+    for(int y = 0; y < height_; ++y)
+    {
+        for(int x = 0; x < width_; ++x)
+        {
+            // Unary plus forces output to be a a number rather than a character
+             out << +int(ceil(operator()(x, y)));
+        }
+        out << '\n';
+    }
+    
+    return out.good();
 }
