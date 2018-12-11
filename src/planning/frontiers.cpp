@@ -99,8 +99,22 @@ robot_path_t plan_path_to_frontier(const std::vector<frontier_t>& frontiers,
     *   - The cells along the frontier might not be in the configuration space of the robot, so you won't necessarily
     *       be able to drive straight to a frontier cell, but will need to drive somewhere close.
     */
+    pose_xyt_t goal;
+    for (frontier_t iter: frontiers)
+    {
+        for (Point<float> currentCell : iter.cells)
+        {
+            if (map.isCellInGrid(currentCell.x, currentCell.y))
+            {
+                
+                goal.x = currentCell.x;
+                goal.y = currentCell.y;
+                return planner.planPath(robotPose, goal);
+            }
+        }
+    }
     robot_path_t emptyPath;
-    
+    emptyPath.path.push_back(robotPose);
     return emptyPath;
 }
 

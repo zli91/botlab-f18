@@ -63,7 +63,7 @@ bool test_unknown_distances(void)
     
     int numUnknownCells = 0;
     int numCorrectUnknownDistances = 0;
-    
+    std::cout<<"grid_height and width:"<<grid.heightInCells()<<" ,"<<grid.widthInCells()<<'\n';
     for(int y = 0; y < grid.heightInCells(); ++y)
     {
         for(int x = 0; x < grid.widthInCells(); ++x)

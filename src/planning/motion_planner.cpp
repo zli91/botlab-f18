@@ -4,7 +4,7 @@
 #include <common/timestamp.h>
 #include <lcmtypes/robot_path_t.hpp>
 #include <cmath>
-
+using namespace std;
 
 MotionPlanner::MotionPlanner(const MotionPlannerParams& params)
 : params_(params)
@@ -37,7 +37,7 @@ robot_path_t MotionPlanner::planPath(const pose_xyt_t& start,
         return failedPath;
     }
     
-    // Otherwise, use A* to find the path
+    cout<<"MotionPlanner: Otherwise, use A* to find the path"<<'\n';
     return search_for_path(start, goal, distances_, searchParams);
 }
 

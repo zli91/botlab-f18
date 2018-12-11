@@ -3,6 +3,8 @@
 
 #include <common/point.hpp>
 #include <vector>
+#include <float.h>
+
 
 class OccupancyGrid;
 

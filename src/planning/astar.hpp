@@ -3,6 +3,11 @@
 
 #include <lcmtypes/robot_path_t.hpp>
 #include <lcmtypes/pose_xyt_t.hpp>
+#include <utility>      // std::pair
+#include <iostream>     // std::cout
+
+
+
 
 class ObstacleDistanceGrid;
 
