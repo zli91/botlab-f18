@@ -4,11 +4,18 @@
 #include <lcmtypes/lidar_t.hpp>
 #include <lcmtypes/particle_t.hpp>
 
+#include <sys/time.h>
+
 #include <cassert>
 #include <random>
 
 using namespace std;
 
+int64_t utime_now (void){
+  struct timeval tv;
+  gettimeofday (&tv, NULL);
+  return (int64_t) tv.tv_sec * 1000000 + tv.tv_usec;
+}
 
 
 ParticleFilter::ParticleFilter(int numParticles)
@@ -51,6 +58,8 @@ pose_xyt_t ParticleFilter::updateFilter(const pose_xyt_t&      odometry,
     // obviously don't do anything.
     bool hasRobotMoved = actionModel_.updateAction(odometry);
 
+    int64_t tvalBefore = utime_now();
+
     if(hasRobotMoved)
     {
         auto prior = resamplePosteriorDistribution();
@@ -59,6 +68,13 @@ pose_xyt_t ParticleFilter::updateFilter(const pose_xyt_t&      odometry,
         posteriorPose_ = estimatePosteriorPose(posterior_);
         // printf("pose:x, y, theta: %f, %f, %f\n", posteriorPose_.x, posteriorPose_.y, posteriorPose_.theta);
     }
+
+    int64_t tvalAfter = utime_now();
+
+    long long int Dtval = tvalAfter - tvalBefore;
+
+    printf("Time to multiply matrices A and B in microseconds: %lld microseconds\n", Dtval);
+
 
     posteriorPose_.utime = odometry.utime;
 

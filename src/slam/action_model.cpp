@@ -13,8 +13,8 @@ ActionModel::ActionModel(void)
 : firstCall_(true)
 {
     //////////////// TODO: Handle any initialization for your ActionModel /////////////////////////
-    alpha[0] = alpha[1] = 0.001f;
-    alpha[2] = alpha[3] = 0.001f;
+    alpha[0] = alpha[1] = 1.0f;
+    alpha[2] = alpha[3] = 0.1f;
 }
 
 
