@@ -30,12 +30,20 @@ void ParticleFilter::initializeFilterAtPose(const pose_xyt_t& pose)
 {
     ///////////// TODO: Implement your method for initializing the particles in the particle filter /////////////////
 
-    std::random_device mch;
-    std::default_random_engine generator(mch());
+    // static std::random_device mch;
+    static std::default_random_engine generator;
 
     std::normal_distribution<double> distributionX(0.0, 0.05);//0.0
     std::normal_distribution<double> distributionY(0.0, 0.05);//0.0
     std::normal_distribution<double> distributionT(0.0, 3.1415926/100.0);
+
+    // std::random_device mch;
+    // std::default_random_engine generator(mch());
+    //
+    // std::normal_distribution<double> distributionX(0.0, 0.05);//0.0
+    // std::normal_distribution<double> distributionY(0.0, 0.05);//0.0
+    // std::normal_distribution<double> distributionT(0.0, 3.1415926/100.0);
+
     for(int i = 0; i < kNumParticles_; i++){
         posterior_.at(i).pose = pose;
 
@@ -108,9 +116,9 @@ std::vector<particle_t> ParticleFilter::resamplePosteriorDistribution(void)
     double M = double(prior.size());
     double maxR = 1.0 / M;
 
-    std::random_device mch;
-    std::default_random_engine generator(mch());
-    std::uniform_real_distribution<double> distribution(0.0,maxR);
+    static std::random_device mch;
+    static std::default_random_engine generator(mch());
+    static std::uniform_real_distribution<double> distribution(0.0,maxR);
 
     double U = distribution(generator);
     double c = posterior_.at(0).weight;

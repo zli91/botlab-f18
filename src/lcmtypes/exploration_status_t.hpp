@@ -23,13 +23,45 @@ class exploration_status_t
         int8_t     status;
 
     public:
+        // If you're using C++11 and are getting compiler errors saying things like
+        // ‘constexpr’ needed for in-class initialization of static data member
+        // then re-run lcm-gen with '--cpp-std=c++11' to generate code that is
+        // compliant with C++11
         static const int8_t   STATE_INITIALIZING = 0;
+        // If you're using C++11 and are getting compiler errors saying things like
+        // ‘constexpr’ needed for in-class initialization of static data member
+        // then re-run lcm-gen with '--cpp-std=c++11' to generate code that is
+        // compliant with C++11
         static const int8_t   STATE_EXPLORING_MAP = 1;
+        // If you're using C++11 and are getting compiler errors saying things like
+        // ‘constexpr’ needed for in-class initialization of static data member
+        // then re-run lcm-gen with '--cpp-std=c++11' to generate code that is
+        // compliant with C++11
         static const int8_t   STATE_RETURNING_HOME = 2;
+        // If you're using C++11 and are getting compiler errors saying things like
+        // ‘constexpr’ needed for in-class initialization of static data member
+        // then re-run lcm-gen with '--cpp-std=c++11' to generate code that is
+        // compliant with C++11
         static const int8_t   STATE_COMPLETED_EXPLORATION = 3;
+        // If you're using C++11 and are getting compiler errors saying things like
+        // ‘constexpr’ needed for in-class initialization of static data member
+        // then re-run lcm-gen with '--cpp-std=c++11' to generate code that is
+        // compliant with C++11
         static const int8_t   STATE_FAILED_EXPLORATION = 4;
+        // If you're using C++11 and are getting compiler errors saying things like
+        // ‘constexpr’ needed for in-class initialization of static data member
+        // then re-run lcm-gen with '--cpp-std=c++11' to generate code that is
+        // compliant with C++11
         static const int8_t   STATUS_IN_PROGRESS = 0;
+        // If you're using C++11 and are getting compiler errors saying things like
+        // ‘constexpr’ needed for in-class initialization of static data member
+        // then re-run lcm-gen with '--cpp-std=c++11' to generate code that is
+        // compliant with C++11
         static const int8_t   STATUS_COMPLETE = 1;
+        // If you're using C++11 and are getting compiler errors saying things like
+        // ‘constexpr’ needed for in-class initialization of static data member
+        // then re-run lcm-gen with '--cpp-std=c++11' to generate code that is
+        // compliant with C++11
         static const int8_t   STATUS_FAILED = 2;
 
     public:
@@ -76,13 +108,13 @@ class exploration_status_t
         inline int _encodeNoHash(void *buf, int offset, int maxlen) const;
         inline int _getEncodedSizeNoHash() const;
         inline int _decodeNoHash(const void *buf, int offset, int maxlen);
-        inline static int64_t _computeHash(const __lcm_hash_ptr *p);
+        inline static uint64_t _computeHash(const __lcm_hash_ptr *p);
 };
 
 int exploration_status_t::encode(void *buf, int offset, int maxlen) const
 {
     int pos = 0, tlen;
-    int64_t hash = getHash();
+    int64_t hash = (int64_t)getHash();
 
     tlen = __int64_t_encode_array(buf, offset + pos, maxlen - pos, &hash, 1);
     if(tlen < 0) return tlen; else pos += tlen;
@@ -172,9 +204,9 @@ int exploration_status_t::_getEncodedSizeNoHash() const
     return enc_size;
 }
 
-int64_t exploration_status_t::_computeHash(const __lcm_hash_ptr *)
+uint64_t exploration_status_t::_computeHash(const __lcm_hash_ptr *)
 {
-    int64_t hash = 0x46cc0600966c2be3LL;
+    uint64_t hash = 0x46cc0600966c2be3LL;
     return (hash<<1) + ((hash>>63)&1);
 }
 

@@ -63,12 +63,20 @@ bool ActionModel::updateAction(const pose_xyt_t& odometry)
 
 
 
-    std::random_device mch;
-    std::default_random_engine generator(mch());
+    // static std::random_device mch;
+    static std::default_random_engine generator;
 
     std::normal_distribution<double> distributionRot1(0.0, alpha[0]*dRot1*dRot1 + alpha[1]*dTrans*dTrans + 0.00001);
     std::normal_distribution<double> distributionTrans(0.0, alpha[2]*dTrans*dTrans + alpha[3]*dRot1*dRot1 + alpha[3]*dRot2*dRot2 + 0.00001);
     std::normal_distribution<double> distributionRot2(0.0, alpha[0]*dRot2*dRot2 + alpha[1]*dTrans*dTrans + 0.00001);
+
+    // std::random_device mch;
+    // std::default_random_engine generator(mch());
+    //
+    // std::normal_distribution<double> distributionRot1(0.0, alpha[0]*dRot1*dRot1 + alpha[1]*dTrans*dTrans + 0.00001);
+    // std::normal_distribution<double> distributionTrans(0.0, alpha[2]*dTrans*dTrans + alpha[3]*dRot1*dRot1 + alpha[3]*dRot2*dRot2 + 0.00001);
+    // std::normal_distribution<double> distributionRot2(0.0, alpha[0]*dRot2*dRot2 + alpha[1]*dTrans*dTrans + 0.00001);
+
 
     hatdRot1 = dRot1 - distributionRot1(generator);
     hatdTrans = dTrans - distributionTrans(generator);
