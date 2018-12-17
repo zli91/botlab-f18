@@ -15,7 +15,7 @@
 #include <iostream>
 #include <iterator>
 #include <map>
-
+// using namespace std;
 /*
 * timing_info_t stores the timing information for the tests that are run.
 */
@@ -179,7 +179,11 @@ bool test_saved_poses(const std::string& mapFile, const std::string& posesFile, 
         if(!path.path.empty())
         {
             auto goalCell = global_position_to_grid_cell(Point<float>(goal.x, goal.y), grid);
+
             auto endCell = global_position_to_grid_cell(Point<float>(path.path.back().x, path.path.back().y), grid);
+            std::cout<< "path size is: "<< path.path.size() << '\n';
+            std::cout<< "goalCell is: "<< "(" << goalCell.x << ", "<< goalCell.y <<")"<<'\n';
+            std::cout<< "endCell is: "<< "(" << endCell.x << ", "<< endCell.y <<")"<<'\n';
             foundPath &= goalCell == endCell;
         }
         
@@ -242,6 +246,8 @@ robot_path_t timed_find_path(const pose_xyt_t& start,
     {
         int64_t startTime = utime_now();
         path = planner.planPath(start, end);
+        std::cout<< "Time_find_path: path size is: "<< path.path.size() << '\n';
+
         int64_t endTime = utime_now();
         
         if(path.path_length > 1)

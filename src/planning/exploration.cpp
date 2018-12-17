@@ -13,6 +13,8 @@
 
 const float kReachedPositionThreshold = 0.05f;  // must get within this distance of a position for it to be explored
 
+#define minFrontierLength 3.0
+
 // Define an equality operator for poses to allow direct comparison of two paths
 bool operator==(const pose_xyt_t& lhs, const pose_xyt_t& rhs)
 {
@@ -247,6 +249,26 @@ int8_t Exploration::executeExploringMap(bool initialize)
     /////////////////////////////// End student code ///////////////////////////////
     
     /////////////////////////   Create the status message    //////////////////////////
+    
+    // std::vector<frontier_t> find_map_frontiers(const OccupancyGrid& map, 
+    //                                        const pose_xyt_t& robotPose,
+    //                                        double minFrontierLength)
+
+    // robot_path_t plan_path_to_frontier(const std::vector<frontier_t>& frontiers, 
+    //                                const pose_xyt_t& robotPose,
+    //                                const OccupancyGrid& map,
+    //                                const MotionPlanner& planner)
+
+    planner_.setMap(currentMap_);
+    previousfrontiers_ = frontiers_.size();
+    frontiers_ = find_map_frontiers(currentMap_, currentPose_, minFrontierLength);
+    if(frontiers_.size() < previousfrontiers_)
+    {
+        currentPath_ = plan_path_to_frontier(frontiers_, currentPose_, currentMap_, planner_ );
+    }
+    
+
+
     exploration_status_t status;
     status.utime = utime_now();
     status.team_number = teamNumber_;
@@ -301,7 +323,11 @@ int8_t Exploration::executeReturningHome(bool initialize)
     *       (1) dist(currentPose_, targetPose_) < kReachedPositionThreshold  :  reached the home pose
     *       (2) currentPath_.path_length > 1  :  currently following a path to the home pose
     */
-    
+    if(initialize)
+    {
+        planner_.setMap(currentMap_);
+        currentPath_ = planner_.planPath(currentPose_, homePose_); 
+    }
 
 
     /////////////////////////////// End student code ///////////////////////////////

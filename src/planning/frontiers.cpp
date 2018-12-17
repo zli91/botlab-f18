@@ -6,8 +6,11 @@
 #include <queue>
 #include <set>
 #include <cassert>
+#include <iostream>
+// #include <planning/astar.hpp>
+using namespace std;
 
-
+std::ostream& operator<<(std::ostream& out, const pose_xyt_t& pose);
 bool is_frontier_cell(int x, int y, const OccupancyGrid& map);
 frontier_t grow_frontier(Point<int> cell, const OccupancyGrid& map, std::set<Point<int>>& visitedFrontiers);
 robot_path_t path_to_frontier(const frontier_t& frontier, 
@@ -99,23 +102,42 @@ robot_path_t plan_path_to_frontier(const std::vector<frontier_t>& frontiers,
     *   - The cells along the frontier might not be in the configuration space of the robot, so you won't necessarily
     *       be able to drive straight to a frontier cell, but will need to drive somewhere close.
     */
+    float mindist = FLT_MAX;
+    float current_dist;
     pose_xyt_t goal;
-    for (frontier_t iter: frontiers)
+    if (!frontiers.empty())
     {
-        for (Point<float> currentCell : iter.cells)
+       for (frontier_t iter: frontiers)
         {
-            if (map.isCellInGrid(currentCell.x, currentCell.y))
+            for (Point<float> currentCell : iter.cells)
             {
-                
-                goal.x = currentCell.x;
-                goal.y = currentCell.y;
-                return planner.planPath(robotPose, goal);
+
+                if (map.isCellInGrid(currentCell.x, currentCell.y))
+                {
+                    current_dist = sqrt(pow((currentCell.x - robotPose.x),2)+pow(currentCell.y - robotPose.y,2));
+                    if (current_dist < mindist)
+                    {
+                        mindist = current_dist;
+                        goal.x = currentCell.x;
+                        goal.y = currentCell.y;
+                    }
+                    
+                    
+                }
             }
-        }
+        } 
+        cout << "Frontier: Found closest frontier:" << goal << " and dist = " << mindist << '\n';
+        return planner.planPath(robotPose, goal);
     }
-    robot_path_t emptyPath;
-    emptyPath.path.push_back(robotPose);
-    return emptyPath;
+    
+    else
+    {   
+        cout << "Frontier: Frontier list is empty, returning robotPose: " << robotPose << '\n';
+        robot_path_t emptyPath;
+        emptyPath.path.push_back(robotPose);
+        return emptyPath;
+    }
+    
 }
 
 

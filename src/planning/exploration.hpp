@@ -86,6 +86,7 @@ private:
     pose_xyt_t homePose_;               // Pose of the robot when it is home, i.e. the initial pose before exploration begins
 
     robot_path_t currentPath_;          // Current path being followed to a frontier or other target, like the home or key poses
+    uint8_t previousfrontiers_;
     std::vector<frontier_t> frontiers_; // Current frontiers in the map
     
     // Data coming in from other modules -- used by LCM thread

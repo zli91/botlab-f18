@@ -136,6 +136,7 @@ bool ObstacleDistanceGrid::saveToFile(const std::string& filename) const
         for(int x = 0; x < width_; ++x)
         {
             // Unary plus forces output to be a a number rather than a character
+             // cout<<operator()(x, y)<<'\n';
              out << +int(ceil(operator()(x, y)));
         }
         out << '\n';
