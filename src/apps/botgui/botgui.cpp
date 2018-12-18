@@ -113,7 +113,7 @@ int BotGui::onMouseEvent(vx_layer_t* layer,
         lcmInstance_->publish(CONTROLLER_PATH_CHANNEL, &path);
     }
     // If an Right-click, send a target to the A* planner
-    else if((event->button_mask & VX_BUTTON3_MASK) && (event->modifiers == 0))
+    else if((event->button_mask & VX_BUTTON3_MASK) || (event->modifiers == 0))
     {
         std::cout << "Planning path to " << worldPoint << "...";
         int64_t startTime = utime_now();
@@ -131,7 +131,7 @@ int BotGui::onMouseEvent(vx_layer_t* layer,
         std::cout << "completed in " << ((utime_now() - startTime) / 1000) << "ms\n";
     }
     
-    
+        // std::cout << "Am I here???" << '\n';
         std::lock_guard<std::mutex> autoLock(vxLock_);
         mouseWorldCoord_ = worldPoint;
         mouseGridCoord_ = global_position_to_grid_cell(worldPoint, map_);

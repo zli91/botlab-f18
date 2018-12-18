@@ -2,6 +2,8 @@
 #include <planning/obstacle_distance_grid.hpp>
 #include <bits/stdc++.h> 
 #include <iostream>
+#include <common/grid_utils.hpp>
+
 using namespace std;
 
 // std::ostream& operator<<(std::ostream& out, const pose_xyt_t& pose);
@@ -26,9 +28,9 @@ struct cell
     double f, g, h; 
 }; 
 
-void printPair(Pair input)
+void printPoint(Point<int> input)
 {
-	cout<<"a* printPair: ["<<input.first<<", "<<input.second<<"] "<<'\n';
+	cout<<"a* printPair: ["<<input.x<<", "<<input.y<<"] "<<'\n';
 }
 
 Pair IndexSwap(int x, int y)
@@ -71,15 +73,15 @@ bool isValid(int row, int col, int width, int height)
            (col >= 0) && (col < height); 
 } 
 
-bool isDestination(int row, int col, Pair dest) 
+bool isDestination(int row, int col, Point<int> dest) 
 { 
-    if (row == dest.first && col == dest.second) 
+    if (row == dest.x && col == dest.y) 
         return (true); 
     else
         return (false); 
 } 
 
-void printSolMap(ObstacleDistanceGrid distances, Pair start, Pair goal)
+void printSolMap(ObstacleDistanceGrid distances, Point<int> start, Point<int> goal)
 {
 
     cout<<"setDistance: after all loops "<<endl;
@@ -124,42 +126,44 @@ void printSolMap(ObstacleDistanceGrid distances, Pair start, Pair goal)
         }
         // cout << '\n';
     }
-    distances (start.second, start.first) = float(6);
-    distances (goal.second, goal.first) = float(8);
+    distances (start.x, start.y) = float(6);
+    distances (goal.x, goal.y) = float(8);
     distances.saveToFile("current_SOL_map.txt");
 }
-double distCost(int i0, int j0, Pair dest,const ObstacleDistanceGrid& distances,const SearchParams& params)
+double distCost(int i0, int j0, Point<int> dest, const ObstacleDistanceGrid& distances,const SearchParams& params)
 {
-	int i1 = dest.first;
-	int j1 = dest.second;
+	int i1 = dest.x;
+	int j1 = dest.y;
 
     double distH = double(distances.metersPerCell()) * sqrt(pow((i0-i1),2) + pow((j0-j1),2));
 
-    Pair swap = IndexSwap(i0,j0);
-	i0 = swap.first;
-	j0 = swap.second;
+    // Pair swap = IndexSwap(i0,j0);
+	// i0 = swap.first;
+	// j0 = swap.second;
     if (distances(i0,j0)>params.minDistanceToObstacle && distances(i0,j0)<params.maxDistanceWithCost)
     {
     	// cout<<"Astar:DistCost if loop Enterred"<<'\n';
-        distH += pow(params.maxDistanceWithCost - distances(i0,j0), params.distanceCostExponent);
+        distH += pow(params.maxDistanceWithCost - distances(i0,j0), 1.0 + params.distanceCostExponent);
     }
     return distH;
 }
 
 // A Utility Function to trace the path from the source 
 // to destination 
-robot_path_t tracePath(cell** cellDetails, pose_xyt_t start, pose_xyt_t goal, ObstacleDistanceGrid distances) 
+robot_path_t tracePath(cell** cellDetails, pose_xyt_t start, pose_xyt_t goal, ObstacleDistanceGrid distances ,const SearchParams& params) 
 { 
-	float metersPerCell = distances.metersPerCell();
-    Point<float> globalOrigin = distances.originInGlobalFrame();
-    float globalOx = globalOrigin.x;
-    float globalOy = globalOrigin.y;
-    Pair StartInd = Coor2Index(start,globalOx,globalOy,metersPerCell);
-	Pair DestInd = Coor2Index(goal,globalOx,globalOy,metersPerCell);
+	// float metersPerCell = distances.metersPerCell();
+    // Point<float> globalOrigin = distances.originInGlobalFrame();
+    // float globalOx = globalOrigin.x;
+    // float globalOy = globalOrigin.y;
+ //    Pair StartInd = Coor2Index(start,globalOx,globalOy,metersPerCell);
+	// Pair DestInd = Coor2Index(goal,globalOx,globalOy,metersPerCell);
+    Point<int> StartInd = global_position_to_grid_cell(Point<float>(start.x, start.y), distances);
+    Point<int> DestInd = global_position_to_grid_cell(Point<float>(goal.x, goal.y), distances);
 	robot_path_t path;
     // printf ("Astar:Tracing back\n"); 
-    int row = DestInd.first; 
-    int col = DestInd.second;
+    int row = DestInd.x; 
+    int col = DestInd.y;
 
     float thetaWatcher = FLT_MAX;
     float currenttheta = 0.0;
@@ -173,7 +177,7 @@ robot_path_t tracePath(cell** cellDetails, pose_xyt_t start, pose_xyt_t goal, Ob
   	// distances(col,row) = 88;
 
   	pose_xyt_t temp;
-  	
+  	Point<double> tempcoor;
     row = cellDetails[row][col].parent_i; 
     col = cellDetails[row][col].parent_j; 
     // cout<<"Astar Tracing: checking DestInd's parent" <<'\n';
@@ -188,46 +192,65 @@ robot_path_t tracePath(cell** cellDetails, pose_xyt_t start, pose_xyt_t goal, Ob
         input.first = row;
     	input.second = col;
     	
-        temp = Index2Coor(input, globalOx, globalOy, metersPerCell);
+        // temp = Index2Coor(input, globalOx, globalOy, metersPerCell);
+        tempcoor = grid_position_to_global_position(Point<float>(row,col),distances);
         int temp_row = cellDetails[row][col].parent_i; 
         int temp_col = cellDetails[row][col].parent_j; 
 
-        int delj = temp_row - row;
-        int deli = temp_col - col;
+        int deli = temp_row - row;
+        int delj = temp_col - col;
 
-        // cout<<"astar: tracepath: distance is actually:"<< distances(col,row) <<'\n';
+        
 
-        if(distances(col,row) > 0.4) 
-            {   
-                // distances(col,row) = 77;
+        if(distances(row,col) < params.maxDistanceWithCost * 1.0 ) 
+        {   
+            // cout<<"astar: tracepath: distance is actually:"<< distances(row,col) <<'\n';
+            if(abs(delj) == 0 )
+            {
+                currenttheta = (float(deli) + 1.0)*M_PI/2.0;
+            }
+            else 
+            {
+                currenttheta = float((delj))* M_PI/2.0 + float((delj)*(deli)) * M_PI/4.0;
+            }
+            if(thetaWatcher != currenttheta )
+            {
+                temp.x = tempcoor.x;
+                temp.y = tempcoor.y;
+                temp.theta = 0.0;
+                path.path.push_back(temp);
+                // distances(row,col) = 76;
+                thetaWatcher = currenttheta; 
                 row = temp_row; 
-                col = temp_col; 
+                col = temp_col;
+            }
+            else
+            {
+                row = temp_row; 
+                col = temp_col;
                 continue;
             }
-        else if(abs(delj) == 0 )
-        {
-            // temp.theta = 
-            // thetaWatcher = ;
-            currenttheta = (float(deli) + 1.0)*M_PI/2.0;
-        }
-        else 
-        {
-            // temp.theta 
-            currenttheta = float((delj))* M_PI/2.0 + float((delj)*(deli)) * M_PI/4.0;
-        }
-        if(thetaWatcher != currenttheta && thetaWatcher < M_PI)
-        {
-            // temp.theta = currenttheta;
-            
+
         }
         else
         {
-            path.path.push_back(temp);
-            distances(col,row) = 76;
-            thetaWatcher = currenttheta; 
+            // distances(col,row) = 77;
             row = temp_row; 
-            col = temp_col;
+            col = temp_col; 
+            // continue;
         }
+        
+        // else
+        // {   
+        //     temp.x = tempcoor.x;
+        //     temp.y = tempcoor.y;
+        //     temp.theta = 0.0;
+        //     path.path.push_back(temp);
+        //     distances(row,col) = 76;
+        //     // thetaWatcher = currenttheta; 
+        //     row = temp_row; 
+        //     col = temp_col;
+        // }
 
         // cout<<"astar: tracepath: pushed once"<<'\n';
         
@@ -242,7 +265,7 @@ robot_path_t tracePath(cell** cellDetails, pose_xyt_t start, pose_xyt_t goal, Ob
     //     printf("-> (%d,%d) ",p.first,p.second); 
     // } 
     path.path.push_back(start);
-    distances(col,row) = 66;
+    // distances(row,col) = 66;
   	path.path_length = path.path.size();
   	cout<<"Astar:path_size is actually: "<<path.path.size()<<'\n';
   	reverse(path.path.begin(),path.path.end());
@@ -271,16 +294,18 @@ robot_path_t search_for_path(pose_xyt_t start,
     int width = distances.widthInCells();
     int height = distances.heightInCells();
     float gcoef = distances.metersPerCell();
-    Point<float> globalOrigin = distances.originInGlobalFrame();
-    float globalOx = globalOrigin.x;
-    float globalOy = globalOrigin.y;
+    // Point<float> globalOrigin = distances.originInGlobalFrame();
+    // float globalOx = globalOrigin.x;
+    // float globalOy = globalOrigin.y;
     bool closedList[width][height]; 
     memset(closedList, false, sizeof (closedList)); 
-    Pair StartInd = Coor2Index(start,globalOx,globalOy,gcoef);
-    Pair DestInd = Coor2Index(goal,globalOx,globalOy,gcoef);
+    // Pair StartInd = Coor2Index(start,globalOx,globalOy,gcoef);
+    // Pair DestInd = Coor2Index(goal,globalOx,globalOy,gcoef);
+    Point<int> StartInd = global_position_to_grid_cell(Point<float>(start.x, start.y), distances);
+    Point<int> DestInd = global_position_to_grid_cell(Point<float>(goal.x, goal.y), distances);
     cout<<"a*: start and gold index:"<<'\n';
-    printPair(StartInd);
-    printPair(DestInd);
+    printPoint(StartInd);
+    printPoint(DestInd);
     // cell cellDetails[width][height]; 
     cell **cellDetails;
 	cellDetails = new cell*[width]; // dynamic array (size 10) of pointers to int
@@ -306,7 +331,7 @@ robot_path_t search_for_path(pose_xyt_t start,
         } 
     } 
 
-    i = StartInd.first, j = StartInd.second; 
+    i = StartInd.x, j = StartInd.y; 
     cellDetails[i][j].f = 0.0; 
     cellDetails[i][j].g = 0.0; 
     cellDetails[i][j].h = 0.0; 
@@ -386,12 +411,12 @@ robot_path_t search_for_path(pose_xyt_t start,
 	                cellDetails[i][j].parent_j = curr_j; 
 	                printf ("Astar: The destination cell is found\n"); 
 	                foundDest = true; 
-	                return tracePath (cellDetails, start, goal, distances); 
+	                return tracePath (cellDetails, start, goal, distances , params); 
 	            } 
 	            // If the successor is already on the closed 
 	            // list or if it is blocked, then ignore it. 
 	            // Else do the following 
-	            else if (closedList[i][j] == false && distances(j,i) > 0.0 ) 
+	            else if (closedList[i][j] == false && distances(i,j) > params.minDistanceToObstacle ) 
 	            { 
 	            	
 	                gNew = cellDetails[curr_i][curr_j].g + Movecost[iter] * gcoef; 
