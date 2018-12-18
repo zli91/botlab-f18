@@ -31,18 +31,18 @@ void ParticleFilter::initializeFilterAtPose(const pose_xyt_t& pose)
     ///////////// TODO: Implement your method for initializing the particles in the particle filter /////////////////
 
     // static std::random_device mch;
-    static std::default_random_engine generator;
+    // static std::default_random_engine generator;
 
-    std::normal_distribution<double> distributionX(0.0, 0.05);//0.0
-    std::normal_distribution<double> distributionY(0.0, 0.05);//0.0
-    std::normal_distribution<double> distributionT(0.0, 3.1415926/100.0);
-
-    // std::random_device mch;
-    // std::default_random_engine generator(mch());
-    //
     // std::normal_distribution<double> distributionX(0.0, 0.05);//0.0
     // std::normal_distribution<double> distributionY(0.0, 0.05);//0.0
     // std::normal_distribution<double> distributionT(0.0, 3.1415926/100.0);
+
+    std::random_device mch;
+    std::default_random_engine generator(mch());
+    
+    std::normal_distribution<double> distributionX(0.0, 0.05);//0.0
+    std::normal_distribution<double> distributionY(0.0, 0.05);//0.0
+    std::normal_distribution<double> distributionT(0.0, 3.1415926/100.0);
 
     for(int i = 0; i < kNumParticles_; i++){
         posterior_.at(i).pose = pose;
@@ -65,23 +65,36 @@ pose_xyt_t ParticleFilter::updateFilter(const pose_xyt_t&      odometry,
     // Only update the particles if motion was detected. If the robot didn't move, then
     // obviously don't do anything.
     bool hasRobotMoved = actionModel_.updateAction(odometry);
+    static bool firstUpdate = 1;
 
     int64_t tvalBefore = utime_now();
 
     if(hasRobotMoved)
     {
+        
+        std::cout << "robot has moved" << std::endl;
+        std::cout << "100th particle x" << posterior_.at(100).pose.x << std::endl;
+
+
         auto prior = resamplePosteriorDistribution();
         auto proposal = computeProposalDistribution(prior);
         posterior_ = computeNormalizedPosterior(proposal, laser, map);
         posteriorPose_ = estimatePosteriorPose(posterior_);
-        // printf("pose:x, y, theta: %f, %f, %f\n", posteriorPose_.x, posteriorPose_.y, posteriorPose_.theta);
+        //printf("pose:x, y, theta: %f, %f, %f\n", posteriorPose_.x, posteriorPose_.y, posteriorPose_.theta);
+    } else{
+        if(firstUpdate){
+            posteriorPose_.x = 0.0f;
+            posteriorPose_.y = 0.0f;
+            posteriorPose_.theta = 0.0f;
+            firstUpdate = 0;
+        }        
     }
 
     int64_t tvalAfter = utime_now();
 
     long long int Dtval = tvalAfter - tvalBefore;
 
-    printf("Time to multiply matrices A and B in microseconds: %lld microseconds\n", Dtval);
+    //printf("Time to multiply matrices A and B in microseconds: %lld microseconds\n", Dtval);
 
 
     posteriorPose_.utime = odometry.utime;
@@ -190,7 +203,7 @@ std::vector<particle_t> ParticleFilter::computeNormalizedPosterior(std::vector<p
       particle.weight /= sum_weights;
 
     }
-
+    std::cout << "sum_weights" << sum_weights << std::endl;
 
     return proposal;
 }
@@ -208,6 +221,7 @@ pose_xyt_t ParticleFilter::estimatePosteriorPose(const std::vector<particle_t>& 
     for(int i = 0; i < int(posterior.size()); i++){
         pose.x += posterior.at(i).pose.x * posterior.at(i).weight;
         pose.y += posterior.at(i).pose.y * posterior.at(i).weight;
+
         pose.theta += posterior.at(i).pose.theta * posterior.at(i).weight;
     }
 
