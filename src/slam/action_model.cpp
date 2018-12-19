@@ -37,11 +37,25 @@ bool ActionModel::updateAction(const pose_xyt_t& odometry)
 
     currentOdometry = odometry;
 
-    float dRot1 = atan2(currentOdometry.y - previousOdometry.y, currentOdometry.x - previousOdometry.x) - previousOdometry.theta;
+    std::cout << "delta y: " << currentOdometry.y - previousOdometry.y << std::endl;
+    std::cout << "delta x: " << currentOdometry.x - previousOdometry.x << std::endl;
+    std::cout << "delta theta: " << currentOdometry.theta - previousOdometry.theta << std::endl;
+
+    float dRot1;
+
+    if(fabs(currentOdometry.y - previousOdometry.y) < 0.01){
+        dRot1 = odometry.theta - previousOdometry.theta;
+    } else{
+
+            dRot1 = atan2(currentOdometry.y - previousOdometry.y, currentOdometry.x - previousOdometry.x) - previousOdometry.theta;
+
+        }
+
+
     float dTrans = sqrt((currentOdometry.x - previousOdometry.x)*(currentOdometry.x - previousOdometry.x) + (currentOdometry.y - previousOdometry.y)*(currentOdometry.y - previousOdometry.y));
     float dRot2 = currentOdometry.theta - previousOdometry.theta - dRot1;
 
-    float ang_thresh = 0.25;
+    float ang_thresh = 0.5;
 
 //    if(dRot1 >= ang_thresh){
 //      dRot1 -= 2 * 3.1415926;
@@ -75,9 +89,9 @@ bool ActionModel::updateAction(const pose_xyt_t& odometry)
       dRot2 = -ang_thresh;
     }
 
-    std::cout << "dRot1: " << dRot1 << std::endl;
-    std::cout << "dTrans: " << dTrans << std::endl;
-    std::cout << "dRot2: " << dRot2 << std::endl;
+//    std::cout << "dRot1: " << dRot1 << std::endl;
+//    std::cout << "dTrans: " << dTrans << std::endl;
+//    std::cout << "dRot2: " << dRot2 << std::endl;
 
 
 
@@ -100,9 +114,9 @@ bool ActionModel::updateAction(const pose_xyt_t& odometry)
     hatdTrans = dTrans - distributionTrans(generator);
     hatdRot2 = dRot2 - distributionRot2(generator);
 
-    std::cout << "hatdRot1: " << hatdRot1 << std::endl;
-    std::cout << "hatdTrans: " << hatdTrans << std::endl;
-    std::cout << "hatdRot2: " << hatdRot2 << std::endl;
+//    std::cout << "hatdRot1: " << hatdRot1 << std::endl;
+//    std::cout << "hatdTrans: " << hatdTrans << std::endl;
+//    std::cout << "hatdRot2: " << hatdRot2 << std::endl;
 
     return true;
 }
