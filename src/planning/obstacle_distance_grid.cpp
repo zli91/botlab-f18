@@ -65,7 +65,7 @@ void ObstacleDistanceGrid::setDistances(const OccupancyGrid& map)
                  }    
             }
         }
-        saveToFile("current_Obstacle_distance.txt");
+        // saveToFile("current_Obstacle_distance.txt");
 
         // cout<<"setDistance: after all loops "<<endl;
         // cout << left;
@@ -109,7 +109,7 @@ void ObstacleDistanceGrid::resetGrid(const OccupancyGrid& map)
     
     cells_.resize(width_ * height_);
     // std::cout << "resetGrid: pre Save file"<< std::endl;
-    map.saveToFile("current_Occu_Grid_Logodds.txt");
+    // map.saveToFile("current_Occu_Grid_Logodds.txt");
 
     // std::cout<<"Obstacle Dis grid size: "<< width_<<" ,"<<height_<<std::endl;
     // std::cout<<"Occu Grid LogOdds: "<<std::endl;

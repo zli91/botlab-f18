@@ -10,10 +10,11 @@
 #include <queue>
 #include <unistd.h>
 #include <cassert>
+using namespace std;
 
 const float kReachedPositionThreshold = 0.05f;  // must get within this distance of a position for it to be explored
 
-#define minFrontierLength 3.0
+#define minFrontierLength 0.1
 
 // Define an equality operator for poses to allow direct comparison of two paths
 bool operator==(const pose_xyt_t& lhs, const pose_xyt_t& rhs)
@@ -119,8 +120,10 @@ void Exploration::copyDataForUpdate(void)
     std::lock_guard<std::mutex> autoLock(dataLock_);
     
     // Only copy the map if a new one has arrived because it is a costly operation
+    cout<<"Enterred copyDataForUpdate:"<<'\n';
     if(haveNewMap_)
     {
+        cout<<"Enterred copyDataForUpdate: we have new map"<<'\n';
         currentMap_ = incomingMap_;
         haveNewMap_ = false;
     }
@@ -261,8 +264,23 @@ int8_t Exploration::executeExploringMap(bool initialize)
 
     planner_.setMap(currentMap_);
     previousfrontiers_ = frontiers_.size();
-    frontiers_ = find_map_frontiers(currentMap_, currentPose_, minFrontierLength);
-    if(frontiers_.size() < previousfrontiers_)
+    frontiers_ = find_map_frontiers(currentMap_, currentPose_);
+    if(!IniExplore)
+    {
+        currentPath_ = plan_path_to_frontier(frontiers_, currentPose_, currentMap_, planner_ );
+        cout<< "Exploration: First path have:" << currentPath_.path.size()<<"points"<<'\n';
+        IniExplore = true;
+    }
+    // while(frontiers_.empty())
+    // {
+    //     frontiers_ = find_map_frontiers(currentMap_, currentPose_, minFrontierLength);
+
+    // }
+    // else
+    // {
+    //     cout<< "Exploration: Frontiers has something!"<<'\n';
+    // }
+    if(!frontiers_.empty() && frontiers_.size() < previousfrontiers_)
     {
         currentPath_ = plan_path_to_frontier(frontiers_, currentPose_, currentMap_, planner_ );
     }
@@ -277,6 +295,7 @@ int8_t Exploration::executeExploringMap(bool initialize)
     // If no frontiers remain, then exploration is complete
     if(frontiers_.empty())
     {
+        cout<< "Exploration: Frontiers is empty! Setting returning to home pose: ("<<homePose_.x<<", "<<homePose_.y<<")"<<'\n';
         status.status = exploration_status_t::STATUS_COMPLETE;
     }
     // Else if there's a path to follow, then we're still in the process of exploring
@@ -323,10 +342,15 @@ int8_t Exploration::executeReturningHome(bool initialize)
     *       (1) dist(currentPose_, targetPose_) < kReachedPositionThreshold  :  reached the home pose
     *       (2) currentPath_.path_length > 1  :  currently following a path to the home pose
     */
-    if(initialize)
+    if(!IniReterH)
     {
+        
+        auto goalCell = global_position_to_grid_cell(Point<double>(homePose_.x, homePose_.y), planner_.distances_);
+        cout<< "Exploration: ReturningHome: Returning to home pose: ("<<homePose_.x<<", "<<homePose_.y<<")"<<"and dist:"<<planner_.distances_(goalCell.x,goalCell.y)<<'\n';
         planner_.setMap(currentMap_);
         currentPath_ = planner_.planPath(currentPose_, homePose_); 
+        IniReterH = true;
+
     }
 
 
@@ -343,6 +367,7 @@ int8_t Exploration::executeReturningHome(bool initialize)
     // If we're within the threshold of home, then we're done.
     if(distToHome <= kReachedPositionThreshold)
     {
+        cout<< "Exploration: ReturningHome: Finish!!!: "<<'\n';
         status.status = exploration_status_t::STATUS_COMPLETE;
     }
     // Otherwise, if there's a path, then keep following it
@@ -363,9 +388,14 @@ int8_t Exploration::executeReturningHome(bool initialize)
     {
         return exploration_status_t::STATE_RETURNING_HOME;
     }
-    else // if(status.status == exploration_status_t::STATUS_FAILED)
+    else if(status.status == exploration_status_t::STATUS_FAILED)
     {
         return exploration_status_t::STATE_FAILED_EXPLORATION;
+    }
+    else
+    {
+
+        return exploration_status_t::STATE_COMPLETED_EXPLORATION;
     }
 }
 

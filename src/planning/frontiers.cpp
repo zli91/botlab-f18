@@ -89,6 +89,66 @@ std::vector<frontier_t> find_map_frontiers(const OccupancyGrid& map,
 }
 
 
+pose_xyt_t BFS(pose_xyt_t goal, const OccupancyGrid& map,const MotionPlanner& planner)
+{
+    Point<int> StartInd = global_position_to_grid_cell(Point<float>(goal.x, goal.y), map);
+
+    std::queue<Point<int>> cellQueue;
+    set<Point<int>> visitedCells;
+
+    cellQueue.push(StartInd);
+    visitedCells.insert(StartInd);
+    Point<double> candidate;
+
+    const int xDeltas[] = {-1, 1, 0, 0, -1, -1, 1, 1};
+    const int yDeltas[] = {0, 0, 1, -1, 1, -1, 1, -1};
+    const int kNumNeighbors = 8;
+
+        // Do a simple BFS to find all connected free space cells and thus avoid unreachable frontiers
+    while(!cellQueue.empty())
+    {
+        Point<int> nextCell = cellQueue.front();
+        cellQueue.pop();
+        
+        // Check each neighbor to see if it is also a frontier
+        for(int n = 0; n < kNumNeighbors; ++n)
+        {
+            Point<int> neighbor(nextCell.x + xDeltas[n], nextCell.y + yDeltas[n]);
+            
+            // If the cell has been visited or isn't in the map, then skip it
+            if(visitedCells.find(neighbor) != visitedCells.end() || !map.isCellInGrid(neighbor.x, neighbor.y))
+            {
+                continue;
+            }
+            // If it is a frontier cell, then grow that frontier
+            else if(planner.distances_(neighbor.x, neighbor.y) > planner.params_.robotRadius)
+            {
+                cout<<"frontier bfs: found nearest point"<<'\n';
+                candidate.x = double(neighbor.x);
+                candidate.y = double(neighbor.y);
+                candidate = grid_position_to_global_position(candidate,map);
+                goal.x = candidate.x;
+                goal.y = candidate.y;
+                return goal;
+            }
+            // If it is a free space cell, then keep growing the frontiers
+            else if(map(neighbor.x, neighbor.y) < 0)
+            {
+                visitedCells.insert(neighbor);
+                cellQueue.push(neighbor);
+            }
+        }
+    }
+
+
+}
+
+
+
+
+
+
+
 robot_path_t plan_path_to_frontier(const std::vector<frontier_t>& frontiers, 
                                    const pose_xyt_t& robotPose,
                                    const OccupancyGrid& map,
@@ -103,7 +163,7 @@ robot_path_t plan_path_to_frontier(const std::vector<frontier_t>& frontiers,
     *       be able to drive straight to a frontier cell, but will need to drive somewhere close.
     */
     float mindist = FLT_MAX;
-    float current_dist;
+    float current_dist = 0.0;
     pose_xyt_t goal;
     if (!frontiers.empty())
     {
@@ -111,8 +171,8 @@ robot_path_t plan_path_to_frontier(const std::vector<frontier_t>& frontiers,
         {
             for (Point<float> currentCell : iter.cells)
             {
-
-                if (map.isCellInGrid(currentCell.x, currentCell.y))
+                auto goalCell = global_position_to_grid_cell(Point<double>(currentCell.x, currentCell.y), planner.distances_);
+                if (map.isCellInGrid(goalCell.x, goalCell.y))
                 {
                     current_dist = sqrt(pow((currentCell.x - robotPose.x),2)+pow(currentCell.y - robotPose.y,2));
                     if (current_dist < mindist)
@@ -121,13 +181,14 @@ robot_path_t plan_path_to_frontier(const std::vector<frontier_t>& frontiers,
                         goal.x = currentCell.x;
                         goal.y = currentCell.y;
                     }
-                    
-                    
                 }
             }
         } 
         cout << "Frontier: Found closest frontier:" << goal << " and dist = " << mindist << '\n';
-        return planner.planPath(robotPose, goal);
+        pose_xyt_t newgoal = BFS(goal,map,planner);
+        current_dist = sqrt(pow((newgoal.x - robotPose.x),2)+pow(newgoal.y - robotPose.y,2));
+        cout << "Frontier: Found nearest point to go:" << newgoal << " and dist = " << current_dist << '\n';
+        return planner.planPath(robotPose, newgoal);
     }
     
     else
