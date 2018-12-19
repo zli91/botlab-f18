@@ -144,8 +144,8 @@ double distCost(int i0, int j0, Point<int> dest, const ObstacleDistanceGrid& dis
     if (distances(i0,j0)>params.minDistanceToObstacle && distances(i0,j0)<params.maxDistanceWithCost)
     {
         double Obs = abs(pow((params.maxDistanceWithCost - distances(i0,j0)), params.distanceCostExponent));
-    	cout<<"Astar:ObsCost:"<<Obs<<'\n';
-        cout<<"Astar:EucCost:"<<distH<<'\n';
+    	// cout<<"Astar:ObsCost:"<<Obs<<'\n';
+        // cout<<"Astar:EucCost:"<<distH<<'\n';
         distH += Obs;
 
     }
