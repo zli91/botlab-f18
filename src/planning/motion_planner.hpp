@@ -147,10 +147,12 @@ public:
     */
     ObstacleDistanceGrid obstacleDistances(void) const { return distances_; }
 
-private:
-    
     ObstacleDistanceGrid distances_;
     MotionPlannerParams params_;
+
+private:
+    
+
     SearchParams searchParams_;
 
     size_t num_frontiers;

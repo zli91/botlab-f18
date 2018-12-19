@@ -63,19 +63,21 @@ bool MotionPlanner::isValidGoal(const pose_xyt_t& goal) const
     float distanceFromPrev = std::sqrt(dx * dx + dy * dy);
 
     //if there's more than 1 frontier, don't go to a target that is within a robot diameter of the current pose
-    if(num_frontiers != 1 && distanceFromPrev < 2 * searchParams_.minDistanceToObstacle) return false;
+    cout<<"MotionPlanner: isValidGoal: so i am here"<<'\n';
+    if(num_frontiers >= 1 && distanceFromPrev < 2 * searchParams_.minDistanceToObstacle) return false;
 
     auto goalCell = global_position_to_grid_cell(Point<double>(goal.x, goal.y), distances_);
 
     // A valid goal is in the grid
     if(distances_.isCellInGrid(goalCell.x, goalCell.y))
     {
+        cout<<"MotionPlanner: isValidGoal: goal is in grid, so dist is: "<<distances_(goalCell.x, goalCell.y)<<"\n";
         // And is far enough from obstacles that the robot can physically occupy the space
         // Add an extra cell to account for discretization error and make motion a little safer by not trying to
         // completely snuggle up against the walls in the motion plan
         return distances_(goalCell.x, goalCell.y) > params_.robotRadius;
     }
-    
+    cout<<"MotionPlanner: isValidGoal: goal is NOT even in the grid"<<'\n';
     // A goal must be in the map for the robot to reach it
     return false;
 }
@@ -85,13 +87,21 @@ bool MotionPlanner::isPathSafe(const robot_path_t& path) const
 {
 
     ///////////// TODO: Implement your test for a safe path here //////////////////
-    return true;
+    float dist = 99999.9;
+    float thresh = params_.robotRadius; //+  distances_.metersPerCell();
+    cout << "MotionPlanner: narrow threshold is: " <<thresh<< '\n';
     for(auto iter = path.path.begin() ; iter != path.path.end(); iter++)
     {
         auto goalCell = global_position_to_grid_cell(Point<double>((*iter).x, (*iter).y), distances_);
-        if (distances_(goalCell.x, goalCell.y) <= params_.robotRadius + distances_.metersPerCell() ) return false;
+        if (distances_(goalCell.x, goalCell.y) < thresh ) 
+        {
+           cout << "MotionPlanner: path is not safe!! with just: " <<distances_(goalCell.x, goalCell.y) << "at:("<<goalCell.x<<", "<<goalCell.y<<")"<< '\n'; 
+           return false; 
+        }
+        dist = min(dist,distances_(goalCell.x, goalCell.y));    
     }
-
+    cout << "MotionPlanner: path is safe!! with: " <<dist<< '\n';
+    return true;
     
 }
 
@@ -106,5 +116,5 @@ void MotionPlanner::setParams(const MotionPlannerParams& params)
 {
     searchParams_.minDistanceToObstacle = params_.robotRadius;
     searchParams_.maxDistanceWithCost = 10.0 * searchParams_.minDistanceToObstacle;
-    searchParams_.distanceCostExponent = 1.0;
+    searchParams_.distanceCostExponent = 0.4;
 }

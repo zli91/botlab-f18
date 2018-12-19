@@ -75,7 +75,8 @@ public:
 private:
     
     int32_t teamNumber_;                // Team number of the robot handling the exploration
-    
+    bool IniExplore = false;
+    bool IniReterH = false;
     // Current state and data associated with the update -- use these variables for your exploration computations
     int8_t state_;                      // Current state of the high-level exploration state machine, as defined in exploration_status_t
     bool  shouldAttemptEscape_;         // Flag indicating if the escaping_map state should be entered after returning_home completes
