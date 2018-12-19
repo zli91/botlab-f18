@@ -13,8 +13,8 @@ ActionModel::ActionModel(void)
 : firstCall_(true)
 {
     //////////////// TODO: Handle any initialization for your ActionModel /////////////////////////
-    alpha[0] = alpha[1] = 1.0f;
-    alpha[2] = alpha[3] = 0.1f;
+    alpha[0] = alpha[1] = 0.001f;
+    alpha[2] = alpha[3] = 0.001f;
 }
 
 
@@ -37,50 +37,86 @@ bool ActionModel::updateAction(const pose_xyt_t& odometry)
 
     currentOdometry = odometry;
 
-    float dRot1 = atan2(currentOdometry.y - previousOdometry.y, currentOdometry.x - previousOdometry.x) - previousOdometry.theta;
+    std::cout << "delta y: " << currentOdometry.y - previousOdometry.y << std::endl;
+    std::cout << "delta x: " << currentOdometry.x - previousOdometry.x << std::endl;
+    std::cout << "delta theta: " << currentOdometry.theta - previousOdometry.theta << std::endl;
+
+    float dRot1;
+
+    if(fabs(currentOdometry.y - previousOdometry.y) < 0.01){
+        dRot1 = odometry.theta - previousOdometry.theta;
+    } else{
+
+            dRot1 = atan2(currentOdometry.y - previousOdometry.y, currentOdometry.x - previousOdometry.x) - previousOdometry.theta;
+
+        }
+
+
     float dTrans = sqrt((currentOdometry.x - previousOdometry.x)*(currentOdometry.x - previousOdometry.x) + (currentOdometry.y - previousOdometry.y)*(currentOdometry.y - previousOdometry.y));
     float dRot2 = currentOdometry.theta - previousOdometry.theta - dRot1;
 
-    float ang_thresh = 0.25;
+    float ang_thresh = 0.5;
+
+//    if(dRot1 >= ang_thresh){
+//      dRot1 -= 2 * 3.1415926;
+//    }
+//
+//    if(dRot2 >= ang_thresh){
+//      dRot2 -= 2 * 3.1415926;
+//   }
+//
+//    if(dRot1 < -ang_thresh){
+//      dRot1 += 2 * 3.1415926;
+//    }
+//
+//    if(dRot2 < -ang_thresh){
+//      dRot2 += 2 * 3.1415926;
+//    }
+
 
     if(dRot1 >= ang_thresh){
-      dRot1 -= 2 * 3.1415926;
+      dRot1 = ang_thresh;
     }
-
     if(dRot2 >= ang_thresh){
-      dRot2 -= 2 * 3.1415926;
-    }
+      dRot2 = ang_thresh;
+   }
 
     if(dRot1 < -ang_thresh){
-      dRot1 += 2 * 3.1415926;
+      dRot1 = -ang_thresh;
     }
 
     if(dRot2 < -ang_thresh){
-      dRot2 += 2 * 3.1415926;
+      dRot2 = -ang_thresh;
     }
 
-
+//    std::cout << "dRot1: " << dRot1 << std::endl;
+//    std::cout << "dTrans: " << dTrans << std::endl;
+//    std::cout << "dRot2: " << dRot2 << std::endl;
 
 
 
     // static std::random_device mch;
-    static std::default_random_engine generator;
+    // static std::default_random_engine generator;
 
-    std::normal_distribution<double> distributionRot1(0.0, alpha[0]*dRot1*dRot1 + alpha[1]*dTrans*dTrans + 0.00001);
-    std::normal_distribution<double> distributionTrans(0.0, alpha[2]*dTrans*dTrans + alpha[3]*dRot1*dRot1 + alpha[3]*dRot2*dRot2 + 0.00001);
-    std::normal_distribution<double> distributionRot2(0.0, alpha[0]*dRot2*dRot2 + alpha[1]*dTrans*dTrans + 0.00001);
-
-    // std::random_device mch;
-    // std::default_random_engine generator(mch());
-    //
     // std::normal_distribution<double> distributionRot1(0.0, alpha[0]*dRot1*dRot1 + alpha[1]*dTrans*dTrans + 0.00001);
     // std::normal_distribution<double> distributionTrans(0.0, alpha[2]*dTrans*dTrans + alpha[3]*dRot1*dRot1 + alpha[3]*dRot2*dRot2 + 0.00001);
     // std::normal_distribution<double> distributionRot2(0.0, alpha[0]*dRot2*dRot2 + alpha[1]*dTrans*dTrans + 0.00001);
+
+    std::random_device mch;
+    std::default_random_engine generator(mch());
+    
+    std::normal_distribution<double> distributionRot1(0.0, alpha[0]*dRot1*dRot1 + alpha[1]*dTrans*dTrans + 0.00001);
+    std::normal_distribution<double> distributionTrans(0.0, alpha[2]*dTrans*dTrans + alpha[3]*dRot1*dRot1 + alpha[3]*dRot2*dRot2 + 0.00001);
+    std::normal_distribution<double> distributionRot2(0.0, alpha[0]*dRot2*dRot2 + alpha[1]*dTrans*dTrans + 0.00001);
 
 
     hatdRot1 = dRot1 - distributionRot1(generator);
     hatdTrans = dTrans - distributionTrans(generator);
     hatdRot2 = dRot2 - distributionRot2(generator);
+
+//    std::cout << "hatdRot1: " << hatdRot1 << std::endl;
+//    std::cout << "hatdTrans: " << hatdTrans << std::endl;
+//    std::cout << "hatdRot2: " << hatdRot2 << std::endl;
 
     return true;
 }

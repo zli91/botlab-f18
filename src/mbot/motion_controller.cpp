@@ -351,7 +351,7 @@ int main(int argc, char** argv)
     while(true)
     {
         lcmInstance.handleTimeout(50);  // update at 20Hz minimum
-        std::cout << "i got here";
+        //std::cout << "i got here";
     	if(controller.timesync_initialized()){
             	mbot_motor_command_t cmd = controller.updateCommand();
                 //std::cout << "i got here" << cmd.trans_v;

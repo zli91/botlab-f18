@@ -201,7 +201,7 @@ void Mapping::bresenhamLineUpdate(Point<int> firstCell, Point<int> secondCell, O
   }
 
   else{
-    std::cout << "Error updating map, cells are not in the grid.\n";
+    //std::cout << "Error updating map, cells are not in the grid.\n";
     return;
   }
 }
