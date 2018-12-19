@@ -72,7 +72,7 @@ public:
         const float kIGain = 0.0f;//0.0001f;
 
         const float kSlowdownDist = 0.3f;//0.26f;
-        const float kDesiredSpeed = 0.5f;//0.55f;
+        const float kDesiredSpeed = 0.25f;//0.55f;
         const float kMinSpeed = 0.02f;//0.4f;
         const float kTurnSpeed = 1.0f;//0.3f;
         

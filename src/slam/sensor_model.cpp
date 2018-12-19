@@ -45,15 +45,15 @@ double SensorModel::likelihood(const particle_t& sample, const lidar_t& scan, co
     // for(int i = 0; i < N ; i++){
     for(auto& ray : movingScan){
         if (ray.range < maxLaserDistance){
-            hitX = sample.parent_pose.x + i * delta_x + ray.range*cos(ray.theta);
-            hitY = sample.parent_pose.y + i * delta_y + ray.range*sin(ray.theta);
+            // hitX = sample.parent_pose.x + i * delta_x + ray.range*cos(ray.theta);
+            // hitY = sample.parent_pose.y + i * delta_y + ray.range*sin(ray.theta);
 
-            i++;
+            // i++;
 
 
             /* origin was messing things up and I dont know why...*/
-            // hitX = movingScan.at(i).origin.x + movingScan.at(i).range*cos(movingScan.at(i).theta);
-            // hitY = movingScan.at(i).origin.y + movingScan.at(i).range*sin(movingScan.at(i).theta);
+            hitX = movingScan.at(i).origin.x + movingScan.at(i).range*cos(movingScan.at(i).theta);
+            hitY = movingScan.at(i).origin.y + movingScan.at(i).range*sin(movingScan.at(i).theta);
 
             hitCellXY = global_position_to_grid_cell({hitX, hitY}, map);
 
